@@ -1,7 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Header() {
+  const navigate = useNavigate();
+
+  // Hàm chuyển hướng
+  const handleRegister = () => {
+    navigate("/register");
+  };
+
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 bg-white border-b z-50">
@@ -40,9 +51,12 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <Button variant="default">Register</Button>
+            <Button variant="default" onClick={handleRegister}>
+              Register
+            </Button>
             <Button
               variant="outline"
+              onClick={handleLogin}
               className="border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-300"
             >
               Login
