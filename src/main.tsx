@@ -3,11 +3,16 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import JobDetail from "@/components/Job/JobDetail.tsx";
 
 const routers = createBrowserRouter([
   {
     path: "/",
     element: <App />,
+  },
+  {
+    path: "posts/:id",
+    element: <JobDetail />,
   },
 ]);
 
