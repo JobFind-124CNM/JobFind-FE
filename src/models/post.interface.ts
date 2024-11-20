@@ -13,5 +13,5 @@ export interface Post {
     amount: number;
     due_at: string;
     area: string;
-    qualification: string;
+    qualification?: string;
 }

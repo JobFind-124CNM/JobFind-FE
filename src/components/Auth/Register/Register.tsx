@@ -42,13 +42,12 @@ export default function Register() {
           <Link to="/">
             <img
               src="/logo.png.webp"
-              alt="Kanban Logo"
+              alt="Jobfind Logo"
               width={300}
               height={300}
               className="mx-auto mb-8"
             />
           </Link>
-          <h1 className="text-[#0095E8] text-7xl font-bold tracking-wide"></h1>
         </div>
       </section>
 
@@ -60,7 +59,7 @@ export default function Register() {
             <Link to="/">
               <img
                 src="/logo.png.webp"
-                alt="Kanban Logo"
+                alt="Jobfind Logo"
                 width={150}
                 height={150}
                 className="mb-6"

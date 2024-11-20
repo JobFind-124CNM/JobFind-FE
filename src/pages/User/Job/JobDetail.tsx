@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Post } from "@/models/post.interface";
+import { FileText } from "lucide-react";
 
 const post: Post = {
   id: 1,
@@ -37,10 +38,13 @@ export default function JobDetail() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
+  const [cvPreview, setCvPreview] = useState<File | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
-      setSelectedFile(event.target.files[0]);
+      const file = event.target.files[0];
+      setCvPreview(file);
+      setSelectedFile(file);
     }
   };
 
@@ -53,14 +57,14 @@ export default function JobDetail() {
   };
 
   return (
-    <div className="max-w-[1320px] mx-auto px-6 py-8">
+    <div className="max-w-[1320px] mx-auto px-6 py-24">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main content */}
         <div className="lg:col-span-2">
           <div className="flex items-start gap-6 mb-8">
             <img
               src="/company-logo.webp"
-              alt="Ziggo"
+              alt="Company logo"
               className="w-16 h-16 rounded-lg border p-2"
             />
             <div>
@@ -168,11 +172,40 @@ export default function JobDetail() {
                           accept=".pdf,.doc,.docx"
                           className="cursor-pointer"
                         />
-                        {selectedFile && (
-                          <p className="text-sm text-gray-500 mt-2">
-                            Selected file: {selectedFile.name}
-                          </p>
-                        )}
+                        <Card>
+                          <div className="px-2">
+                            {cvPreview && (
+                              <div className="mt-2">
+                                <p className="text-sm text-gray-500 mb-2">
+                                  Selected file: {cvPreview.name}
+                                </p>
+                                {URL.createObjectURL(cvPreview) && (
+                                  <div className="border rounded-lg p-4">
+                                    {cvPreview.type === "application/pdf" ? (
+                                      <iframe
+                                        src={URL.createObjectURL(cvPreview)}
+                                        className="w-full h-[400px]"
+                                        title="CV Preview"
+                                      />
+                                    ) : (
+                                      <div className="flex items-center justify-center h-[400px] bg-gray-100">
+                                        <a
+                                          href={URL.createObjectURL(cvPreview)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center text-blue-500 hover:underline"
+                                        >
+                                          <FileText className="mr-2" />
+                                          View CV
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </Card>
                       </div>
                       <Button type="submit" className="w-full">
                         Submit Application

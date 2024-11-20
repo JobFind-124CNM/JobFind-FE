@@ -42,14 +42,15 @@ export default function Login() {
       {/* Logo Section */}
       <section className="hidden lg:flex flex-col items-center justify-center bg-white p-8">
         <div className="max-w-[400px] text-center">
-          <img
-            src="/public/logo.png.webp"
-            alt="Logo Jobfind"
-            width={400}
-            height={400}
-            className="mx-auto mb-8"
-          />
-          <h1 className="text-[#0095E8] text-7xl font-bold tracking-wide"></h1>
+          <Link to="/">
+            <img
+              src="/logo.png.webp"
+              alt="Jobfind Logo"
+              width={300}
+              height={300}
+              className="mx-auto mb-8"
+            />
+          </Link>
         </div>
       </section>
 
@@ -58,13 +59,15 @@ export default function Login() {
         <div className="w-full max-w-[400px] space-y-6">
           {/* Small Logo for Mobile */}
           <div className="flex flex-col items-center mb-8">
-            <img
-              src="/public/logo.png.webp"
-              alt="Kanban Logo"
-              width={150}
-              height={150}
-              className="mb-6"
-            />
+            <Link to="/">
+              <img
+                src="/logo.png.webp"
+                alt="Jobfind Logo"
+                width={150}
+                height={150}
+                className="mb-6"
+              />
+            </Link>
             <h2 className="text-[32px] font-semibold text-gray-900">
               Log in to your account
             </h2>
