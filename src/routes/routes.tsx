@@ -8,30 +8,37 @@ import Otp from "@/components/Auth/OTP/Otp";
 import JobApplicationHistory from "@/pages/User/Job/JobApplied";
 import CompanyRegister from "@/pages/User/Company/Company-Register";
 import Profile from "@/pages/User/Profile/Profile";
+import SocialCallback from "@/components/Auth/SocialCallback/SocialCallback";
+import AuthGuard from "@/guards/AuthGuard";
 
 const routers = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
     children: [
-      { path: "/", element: <App /> },
-      { path: "posts/:id", element: <JobDetail /> },
-      { path: "/profile", element: <Profile /> },
-      { path: "/applicaiton-history", element: <JobApplicationHistory /> },
-      { path: "/company-register", element: <CompanyRegister /> },
+      {
+        element: <AuthGuard />,
+        children: [
+          { path: "/", element: <App /> },
+          { path: "posts/:id", element: <JobDetail /> },
+          { path: "/profile", element: <Profile /> },
+          { path: "/applicaiton-history", element: <JobApplicationHistory /> },
+          { path: "/company-register", element: <CompanyRegister /> },
+        ],
+      },
     ],
   },
   {
-    path: "/register",
-    element: <Register />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/verify",
-    element: <Otp />,
+    path: "/auth",
+    children: [
+      { path: "register", element: <Register /> },
+      { path: "login", element: <Login /> },
+      { path: "verify", element: <Otp /> },
+      {
+        path: "social/callback/:loginType",
+        element: <SocialCallback />,
+      },
+    ],
   },
 ]);
 

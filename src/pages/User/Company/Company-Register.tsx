@@ -231,7 +231,7 @@ export default function CompanyRegister() {
             />
           </div>
 
-          <div className="flex justify-end pt-8">
+          <div className="flex justify-end pt-4">
             <Button type="submit" size="lg">
               Lưu thông tin
             </Button>
