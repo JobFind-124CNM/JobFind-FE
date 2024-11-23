@@ -47,11 +47,11 @@ export default function Header() {
   }, []);
 
   const handleLogin = () => {
-    navigate("/login");
+    navigate("/auth/login");
   };
 
   const handleRegister = () => {
-    navigate("/register");
+    navigate("/auth/register");
   };
 
   const handleLogout = () => {
