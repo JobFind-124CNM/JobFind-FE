@@ -1,14 +1,22 @@
-"use client";
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Smartphone } from "lucide-react";
+import { toast } from "react-toastify";
+import api from "@/utils/api";
+import { useLocation, useNavigate } from "react-router-dom";
+import { showToast, ToastContainer } from "@/utils/toastConfig";
 
 export default function Otp() {
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
-  const [resendTimer, setResendTimer] = useState(30);
+  const [resendTimer, setResendTimer] = useState(60);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const location = useLocation();
+  const { userId, email } = location.state || {};
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -50,20 +58,56 @@ export default function Otp() {
     [otp]
   );
 
-  const handleResend = useCallback(() => {
-    setResendTimer(30);
-    // Add your resend OTP logic here
-  }, []);
-
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
+
       const otpValue = otp.join("");
-      console.log("Submitted OTP:", otpValue);
-      // Add your verification logic here
+
+      try {
+        setLoading(true);
+
+        const response = await api.post(`/auth/verify-otp`, {
+          user_id: userId,
+          otp_code: otpValue,
+        });
+
+        if (!response.data?.status) {
+          toast.error("Invalid OTP. Please try again.");
+          return;
+        }
+
+        showToast("OTP verified successfully.", "success");
+
+        navigate("/login");
+      } catch (err: any) {
+        showToast(
+          err.response?.data?.message || "Invalid OTP. Please try again.",
+          "error"
+        );
+      } finally {
+        setLoading(false);
+      }
     },
-    [otp]
+    [otp, navigate]
   );
+
+  const handleResend = useCallback(async () => {
+    setResendTimer(60);
+
+    try {
+      setLoading(true);
+
+      await api.post("/auth/resend-otp", { email: email });
+      toast.success("OTP resent successfully!");
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.message || "Failed to resend OTP. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -72,9 +116,11 @@ export default function Otp() {
           <div className="w-48 h-56 bg-[#FFB800] rounded-md  mx-auto flex items-center justify-center mb-4">
             <Smartphone className="w-44 h-52 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">XÁC THỰC OTP</h2>
-          <p className="text-white/90 text-sm">
-            mã đã được gửi tới sdt 0762216048
+          <h2 className="text-2xl font-bold text-white mb-2">
+            OTP VERIFICATION
+          </h2>
+          <p className="text-white/90 text-md">
+            Please check your registered email to get OTP code!
           </p>
         </div>
 
@@ -112,11 +158,13 @@ export default function Otp() {
           <Button
             type="submit"
             className="w-full bg-[#3461FF] hover:bg-[#3461FF]/90 text-white py-3 rounded-lg"
+            disabled={loading}
           >
-            Xác Thực
+            {loading ? "Submit..." : "Submit"}
           </Button>
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 }

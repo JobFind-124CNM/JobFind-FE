@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,27 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  cv: File | null;
-  avatar: string;
-  gender?: string;
-  experience?: string;
-}
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import { User } from "@/models/user.interface";
 
 export default function Profile() {
-  const [profile, setProfile] = useState<UserProfile>({
-    name: "Thanh tuan Le",
-    email: "thanhtuanle939@gmail.com",
-    phone: "",
-    cv: null,
-    avatar: "/placeholder.svg",
-    gender: "male",
-    experience: "5",
-  });
+  const user = useSelector((state: RootState) => state.user.user);
+  const [profile, setProfile] = useState<User | null>(null);
+
+  useEffect(() => {
+    setProfile(user);
+  }, [user]);
 
   const [passwords, setPasswords] = useState({
     currentPassword: "",
@@ -57,7 +45,12 @@ export default function Profile() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    setProfile((prev) => {
+      if (prev) {
+        return { ...prev, [name]: value };
+      }
+      return prev;
+    });
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,13 +65,20 @@ export default function Profile() {
     if (e.target.files && e.target.files[0]) {
       if (fileType === "cv") {
         const file = e.target.files[0];
-        setProfile((prev) => ({ ...prev, cv: file }));
+        setProfile((prev) => {
+          if (prev) {
+            return { ...prev, cv: file };
+          }
+          return prev;
+        });
         setCvPreviewUrl(URL.createObjectURL(file));
       } else {
-        setProfile((prev) => ({
-          ...prev,
-          avatar: URL.createObjectURL(e.target.files![0]),
-        }));
+        setProfile((prev) => {
+          if (prev) {
+            return { ...prev, avatar: URL.createObjectURL(e.target.files![0]) };
+          }
+          return prev;
+        });
       }
     }
   };
@@ -97,14 +97,24 @@ export default function Profile() {
 
   const handleAvatarSave = () => {
     if (newAvatar) {
-      setProfile((prev) => ({ ...prev, avatar: newAvatar }));
+      setProfile((prev) => {
+        if (prev) {
+          return { ...prev, avatar: newAvatar };
+        }
+        return prev;
+      });
     }
     setIsAvatarDialogOpen(false);
   };
 
   const handleAvatarDelete = () => {
     setNewAvatar(null);
-    setProfile((prev) => ({ ...prev, avatar: "/placeholder.svg" }));
+    setProfile((prev) => {
+      if (prev) {
+        return { ...prev, avatar: "/placeholder.svg" };
+      }
+      return prev;
+    });
   };
 
   return (
@@ -133,7 +143,7 @@ export default function Profile() {
                   <Input
                     id="name"
                     name="name"
-                    value={profile.name}
+                    value={profile?.username}
                     onChange={handleInputChange}
                     required
                   />
@@ -148,7 +158,7 @@ export default function Profile() {
                     name="phone"
                     type="tel"
                     placeholder="Nhập số điện thoại"
-                    value={profile.phone}
+                    value={profile?.phone}
                     onChange={handleInputChange}
                     required
                   />
@@ -162,7 +172,7 @@ export default function Profile() {
                     id="email"
                     name="email"
                     type="email"
-                    value={profile.email}
+                    value={profile?.email}
                     onChange={handleInputChange}
                     required
                   />
@@ -175,9 +185,14 @@ export default function Profile() {
                     </Label>
                     <Select
                       name="gender"
-                      value={profile.gender}
+                      value={profile?.gender}
                       onValueChange={(value) =>
-                        setProfile((prev) => ({ ...prev, gender: value }))
+                        setProfile((prev) => {
+                          if (prev) {
+                            return { ...prev, gender: value };
+                          }
+                          return prev;
+                        })
                       }
                     >
                       <SelectTrigger>
@@ -202,7 +217,7 @@ export default function Profile() {
                       min="0"
                       step="1"
                       placeholder="Nhập số năm kinh nghiệm"
-                      value={profile.experience}
+                      value={profile?.experience}
                       onChange={handleInputChange}
                       required
                     />
@@ -218,9 +233,9 @@ export default function Profile() {
                     onChange={(e) => handleFileChange(e, "cv")}
                     accept=".pdf,.doc,.docx"
                   />
-                  {profile.cv && (
+                  {profile?.cv && (
                     <p className="text-sm text-gray-500">
-                      File đã chọn: {profile.cv.name}
+                      File đã chọn: {profile?.cv.name}
                     </p>
                   )}
                 </div>
@@ -282,9 +297,9 @@ export default function Profile() {
             <div className="flex items-start gap-4">
               <div className="relative">
                 <Avatar className="w-16 h-16">
-                  <AvatarImage src={profile.avatar} alt={profile.name} />
+                  <AvatarImage src={profile?.avatar} alt={profile?.username} />
                   <AvatarFallback>
-                    {profile.name
+                    {profile?.username
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
@@ -335,11 +350,11 @@ export default function Profile() {
                         </h3>
                         <Avatar className="w-32 h-32 mx-auto">
                           <AvatarImage
-                            src={newAvatar || profile.avatar}
-                            alt={profile.name}
+                            src={newAvatar || profile?.avatar}
+                            alt={profile?.username}
                           />
                           <AvatarFallback>
-                            {profile.name
+                            {profile?.username
                               .split(" ")
                               .map((n) => n[0])
                               .join("")}
@@ -380,7 +395,7 @@ export default function Profile() {
                   </Badge>
                 </div>
                 <h2 className="text-xl font-semibold">Chào bạn trở lại,</h2>
-                <p className="font-medium">{profile.name}</p>
+                <p className="font-medium">{profile?.username}</p>
                 <div className="flex items-center gap-2 text-sm text-green-600">
                   <CheckCircle2 className="h-4 w-4" />
                   <span>Tài khoản đã xác thực</span>
@@ -391,10 +406,10 @@ export default function Profile() {
 
           <Card>
             <div className="px-2">
-              {profile.cv && (
+              {profile?.cv && (
                 <div className="mt-2">
                   <p className="text-sm text-gray-500 mb-2">
-                    Selected file: {profile.cv.name}
+                    Selected file: {profile?.cv.name}
                   </p>
                   {cvPreviewUrl && (
                     <div className="border rounded-lg p-4">
