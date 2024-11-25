@@ -47,11 +47,11 @@ export default function Header() {
   }, []);
 
   const handleLogin = () => {
-    navigate("/login");
+    navigate("/auth/login");
   };
 
   const handleRegister = () => {
-    navigate("/register");
+    navigate("/auth/register");
   };
 
   const handleLogout = () => {
@@ -126,7 +126,7 @@ export default function Header() {
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuGroup>
                     <DropdownMenuItem
