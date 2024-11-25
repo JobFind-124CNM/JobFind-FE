@@ -10,6 +10,9 @@ import CompanyRegister from "@/pages/User/Company/Company-Register";
 import Profile from "@/pages/User/Profile/Profile";
 import SocialCallback from "@/components/Auth/SocialCallback/SocialCallback";
 import AuthGuard from "@/guards/AuthGuard";
+import TagManagement from "@/pages/Admin/Tags/TagManagement";
+import RoleManagement from "@/pages/Admin/Roles/RoleManagement";
+import JobSearch from "@/pages/User/Job/JobSearch";
 
 const routers = createBrowserRouter([
   {
@@ -24,6 +27,7 @@ const routers = createBrowserRouter([
           { path: "/profile", element: <Profile /> },
           { path: "/applicaiton-history", element: <JobApplicationHistory /> },
           { path: "/company-register", element: <CompanyRegister /> },
+          { path: "/jobs", element: <JobSearch /> },
         ],
       },
     ],
@@ -38,6 +42,13 @@ const routers = createBrowserRouter([
         path: "social/callback/:loginType",
         element: <SocialCallback />,
       },
+    ],
+  },
+  {
+    path: "/admin",
+    children: [
+      { path: "tags", element: <TagManagement /> },
+      { path: "roles", element: <RoleManagement /> },
     ],
   },
 ]);
