@@ -141,7 +141,7 @@ export default function TagManagement() {
   return (
     <AdminLayout>
       <div className="space-y-6 bg-white p-4 rounded">
-        <h1 className="text-2xl font-bold">Quản lý Tag</h1>
+        <h1 className="text-2xl font-bold">Tag Management</h1>
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
