@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, MapPin } from "lucide-react";
+import { Building2, CircleDollarSign, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Post } from "@/models/post.interface";
 
@@ -44,6 +44,10 @@ export default function JobItem(data: Post) {
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{data.area}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CircleDollarSign className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{data.salary}</span>
           </div>
         </div>
       </div>
