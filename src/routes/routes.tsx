@@ -13,6 +13,7 @@ import AuthGuard from "@/guards/AuthGuard";
 import TagManagement from "@/pages/Admin/Tags/TagManagement";
 import RoleManagement from "@/pages/Admin/Roles/RoleManagement";
 import JobSearch from "@/pages/User/Job/JobSearch";
+import UserManagement from "@/pages/Admin/Users/UserManagement";
 
 const routers = createBrowserRouter([
   {
@@ -49,6 +50,7 @@ const routers = createBrowserRouter([
     children: [
       { path: "tags", element: <TagManagement /> },
       { path: "roles", element: <RoleManagement /> },
+      { path: "users", element: <UserManagement /> },
     ],
   },
 ]);

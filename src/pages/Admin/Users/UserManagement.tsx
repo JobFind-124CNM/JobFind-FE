@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -41,7 +40,6 @@ import {
   ChevronDown,
   Edit,
   Trash,
-  Plus,
   Search,
   ChevronRight,
   ChevronLeft,
@@ -49,37 +47,51 @@ import {
 import api from "@/utils/api";
 import { format } from "date-fns";
 import { PaginationInfo } from "@/models/PaginationInfo.interface";
+import { User } from "@/models/user.interface";
+import { Badge } from "@/components/ui/badge";
 import { Role } from "@/models/role.interface";
-import { Textarea } from "@/components/ui/textarea";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { showToast, ToastContainer } from "@/utils/toastConfig";
+import { Switch } from "@/components/ui/switch";
 
-export default function RoleManagement() {
+export default function UserManagement() {
+  const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-  const [sortField, setSortField] = useState<keyof Role>("name");
+  const [sortField, setSortField] = useState<keyof User>("username");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [newRole, setNewRole] = useState({ name: "", description: "" });
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deletingRole, setDeletingRole] = useState<Role | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
 
   useEffect(() => {
+    getUsers();
     getRoles();
   }, []);
 
-  const getRoles = async (page = 1, size = 5, search = "") => {
+  const getRoles = async () => {
     try {
-      const response = await api.get(`roles?q=${search}&p=${page}&s=${size}`);
+      const response = await api.get("roles/all");
       setRoles(response.data.data);
-      setPagination(response.data.pagination);
     } catch (error) {
-      console.error("Error fetching tags:", error);
+      console.error("Error fetching roles:", error);
     }
   };
 
-  const handleSort = (field: keyof Role) => {
+  const getUsers = async (page = 1, size = 5, search = "") => {
+    try {
+      const response = await api.get(`users?q=${search}&p=${page}&s=${size}`);
+      setUsers(response.data.data);
+      setPagination(response.data.pagination);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const handleSort = (field: keyof User) => {
     if (field === sortField) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
@@ -89,63 +101,78 @@ export default function RoleManagement() {
     // You might want to call an API endpoint here to sort on the server-side
   };
 
-  const handleAddRole = async () => {
+  const handleDeleteUser = async (id: number) => {
     try {
-      const response = await api.post("roles", newRole);
-      setRoles([...roles, response.data.data]);
-      setIsAddDialogOpen(false);
-      setNewRole({ name: "", description: "" });
-      getRoles(pagination?.current_page, pagination?.size);
-    } catch (error) {
-      console.error("Error adding tag:", error);
-    }
-  };
-
-  const handleUpdateRole = async () => {
-    if (!editingRole) return;
-    try {
-      const response = await api.put(`roles/${editingRole.id}`, editingRole);
-      setRoles(
-        roles.map((role) =>
-          role.id === editingRole.id ? response.data.data : role
-        )
-      );
-      setIsEditDialogOpen(false);
-      setEditingRole(null);
-      getRoles(pagination?.current_page, pagination?.size);
-    } catch (error) {
-      console.error("Error updating tag:", error);
-    }
-  };
-
-  const handleDeleteRole = async (id: number) => {
-    try {
-      await api.delete(`roles/${id}`).then(() => {
-        setRoles(roles.filter((role) => role.id !== id));
+      await api.delete(`users/${id}`).then(() => {
+        setUsers(users.filter((user) => user.id !== id));
         setIsDeleteDialogOpen(false);
-        getRoles(pagination?.current_page, pagination?.size);
+        getUsers(pagination?.current_page, pagination?.size);
       });
     } catch (error) {
-      console.error("Error deleting tag:", error);
+      console.error("Error deleting user:", error);
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      const roleNames = selectedRoles.map((role) => role.name);
+      await api
+        .post(`users/${editingUser.id}/roles`, {
+          role_names: roleNames,
+        })
+        .then(() => {
+          setUsers((prevUsers) =>
+            prevUsers.map((user) =>
+              user.id === editingUser.id
+                ? { ...editingUser, roles: selectedRoles }
+                : user
+            )
+          );
+          setIsEditDialogOpen(false);
+          showToast("Updated user roles successfully", "success");
+        });
+    } catch (error) {
+      console.error("Error updating user:", error);
     }
   };
 
   const handleSearch = () => {
-    getRoles(1, pagination?.size, searchTerm);
+    getUsers(1, pagination?.size, searchTerm);
   };
 
   const handlePageChange = (page: number) => {
-    getRoles(page, pagination?.size);
+    getUsers(page, pagination?.size);
   };
 
   const handlePageSizeChange = (size: number) => {
-    getRoles(1, size);
+    getUsers(1, size);
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "active":
+        return "active";
+      case "inactive":
+        return "inactive";
+      case "banned":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+
+  const handleSelectUser = (user: User) => {
+    setEditingUser(user);
+    setSelectedRoles(user.roles || []);
+    setIsEditDialogOpen(true);
   };
 
   return (
     <AdminLayout>
       <div className="space-y-6 bg-white p-4 rounded">
-        <h1 className="text-2xl font-bold">Role Management</h1>
+        <h1 className="text-2xl font-bold">User Management</h1>
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -162,89 +189,69 @@ export default function RoleManagement() {
               <Search />
             </Button>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus /> Add new
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add new tag</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    value={newRole.name}
-                    onChange={(e) =>
-                      setNewRole({ ...newRole, name: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    value={newRole.description}
-                    onChange={(e) =>
-                      setNewRole({ ...newRole, description: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <Button onClick={handleAddRole}>Add</Button>
-            </DialogContent>
-          </Dialog>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>No.</TableHead>
+              <TableHead>Avatar</TableHead>
               <TableHead
                 className="cursor-pointer"
-                onClick={() => handleSort("name")}
+                onClick={() => handleSort("username")}
               >
-                Role name{" "}
-                {sortField === "name" &&
+                Username{" "}
+                {sortField === "username" &&
                   (sortDirection === "asc" ? (
                     <ChevronUp className="inline" />
                   ) : (
                     <ChevronDown className="inline" />
                   ))}
               </TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Roles</TableHead>
               <TableHead>Created at</TableHead>
+              <TableHead>Updated at</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {roles.length > 0 ? (
-              roles.map((role, index) => (
-                <TableRow key={role.id}>
+            {users.length > 0 ? (
+              users.map((user, index) => (
+                <TableRow key={user.id}>
                   <TableCell>
                     {pagination ? pagination.from + index : index + 1}
                   </TableCell>
-                  <TableCell>{role.name}</TableCell>
-                  <TableCell>{role.description}</TableCell>
                   <TableCell>
-                    {format(role.created_at, "dd/MM/yyyy HH:mm")}
+                    <img
+                      src={user.avatar ? user.avatar : "/default_avatar.png"}
+                      alt={user.username}
+                      className="w-10 h-10 rounded-full"
+                    />
+                  </TableCell>
+                  <TableCell>{user.username}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusVariant(user.status)}>
+                      {user.status.toUpperCase()}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {user.roles?.map((role) => role.name).join(", ")}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(user.created_at), "dd/MM/yyyy HH:mm")}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(user.updated_at), "dd/MM/yyyy HH:mm")}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
                       variant="outline"
                       className="mr-2"
                       onClick={() => {
-                        setEditingRole(role);
-                        setIsEditDialogOpen(true);
+                        handleSelectUser(user);
                       }}
                     >
                       <Edit />
@@ -253,7 +260,7 @@ export default function RoleManagement() {
                       variant="default"
                       onClick={() => {
                         setIsDeleteDialogOpen(true);
-                        setDeletingRole(role);
+                        setDeletingUser(user);
                       }}
                     >
                       <Trash />
@@ -263,7 +270,7 @@ export default function RoleManagement() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3}>
+                <TableCell colSpan={9}>
                   <span className="text-center py-4">No data</span>
                 </TableCell>
               </TableRow>
@@ -342,41 +349,85 @@ export default function RoleManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{`Role update with id ${editingRole?.id}`}</DialogTitle>
+            <DialogTitle>{`User ${editingUser?.email}`}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-name" className="text-right">
-                Role name
+              <Label htmlFor="edit-username" className="text-right">
+                Username
               </Label>
               <Input
-                id="edit-name"
-                value={editingRole?.name || ""}
+                id="edit-username"
+                value={editingUser?.username || ""}
                 onChange={(e) =>
-                  setEditingRole((prev) =>
-                    prev ? { ...prev, name: e.target.value } : null
+                  setEditingUser((prev) =>
+                    prev ? { ...prev, username: e.target.value } : null
                   )
                 }
+                disabled
                 className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-description" className="text-right">
-                Description
+              <Label htmlFor="edit-email" className="text-right">
+                Email
               </Label>
-              <Textarea
-                id="edit-description"
-                value={editingRole?.description || ""}
+              <Input
+                type="email"
+                id="edit-email"
+                value={editingUser?.email || ""}
                 onChange={(e) =>
-                  setEditingRole((prev) =>
-                    prev ? { ...prev, description: e.target.value } : null
+                  setEditingUser((prev) =>
+                    prev ? { ...prev, email: e.target.value } : null
                   )
                 }
+                disabled
                 className="col-span-3"
               />
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-status" className="text-right">
+                Status
+              </Label>
+              <Switch
+                id="edit-status"
+                checked={editingUser?.status === "active"}
+                onCheckedChange={() =>
+                  setEditingUser((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          status:
+                            prev.status === "active" ? "inactive" : "active",
+                        }
+                      : null
+                  )
+                }
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-roles" className="text-right">
+                Roles
+              </Label>
+              <MultiSelect
+                className="col-span-3"
+                options={roles.map((role) => ({
+                  label: role.name,
+                  value: role.id.toString(),
+                }))}
+                onValueChange={(values) => {
+                  const selected = roles.filter((role) =>
+                    values.includes(role.id.toString())
+                  );
+                  setSelectedRoles(selected);
+                }}
+                defaultValue={selectedRoles.map((role) => role.id.toString())}
+                placeholder="Select roles"
+                variant="inverted"
+              />
+            </div>
           </div>
-          <Button onClick={handleUpdateRole}>Cập nhật</Button>
+          <Button onClick={handleUpdateUser}>Update</Button>
         </DialogContent>
       </Dialog>
 
@@ -387,22 +438,23 @@ export default function RoleManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{`Delete ${
-              deletingRole?.name ?? ""
+              deletingUser?.email ?? ""
             }`}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this tag?
+              Are you sure you want to delete this user?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingRole && handleDeleteRole(deletingRole.id)}
+              onClick={() => deletingUser && handleDeleteUser(deletingUser.id)}
             >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ToastContainer />
     </AdminLayout>
   );
 }
