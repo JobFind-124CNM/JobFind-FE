@@ -14,6 +14,11 @@ import TagManagement from "@/pages/Admin/Tags/TagManagement";
 import RoleManagement from "@/pages/Admin/Roles/RoleManagement";
 import JobSearch from "@/pages/User/Job/JobSearch";
 import UserManagement from "@/pages/Admin/Users/UserManagement";
+import CompanyManagement from "@/pages/Admin/Companies/CompanyManagement";
+import LevelManagement from "@/pages/Admin/Levels/LevelManagement";
+import AreaManagement from "@/pages/Admin/Areas/AreaManagement";
+import CategoryManagement from "@/pages/Admin/Categories/CategoryManagement";
+import FormOfWorkManagement from "@/pages/Admin/FormOfWorks/FormOfWorkManagement";
 
 const routers = createBrowserRouter([
   {
@@ -51,6 +56,11 @@ const routers = createBrowserRouter([
       { path: "tags", element: <TagManagement /> },
       { path: "roles", element: <RoleManagement /> },
       { path: "users", element: <UserManagement /> },
+      { path: "companies", element: <CompanyManagement /> },
+      { path: "levels", element: <LevelManagement /> },
+      { path: "areas", element: <AreaManagement /> },
+      { path: "categories", element: <CategoryManagement /> },
+      { path: "form-of-works", element: <FormOfWorkManagement /> }
     ],
   },
 ]);
