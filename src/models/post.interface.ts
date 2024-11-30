@@ -1,3 +1,12 @@
+import { Area } from "@/models/area.interface";
+import { Category } from "@/models/category.interface";
+import { Company } from "@/models/company.interface";
+import { FormOfWork } from "@/models/form-of-work.interface";
+import { Level } from "@/models/level.interface";
+import { Position } from "@/models/position.interface";
+import { Tag } from "@/models/tag.interface";
+import { User } from "@/models/user.interface";
+
 export interface Post {
     id: number;
     title: string;
@@ -6,12 +15,16 @@ export interface Post {
     created_at: string;
     updated_at: string;
     benefit: string;
-    company: string;
-    formOfWork: string;
+    company: Company;
+    form_of_work: FormOfWork;
     salary: string;
-    caterory: string;
+    category: Category;
     amount: number;
     due_at: string;
-    area: string;
-    qualification?: string;
+    area: Area;
+    qualification: string;
+    users?: User[];
+    levels?: Level[];
+    tags?: Tag[];
+    posision?: Position[];
 }

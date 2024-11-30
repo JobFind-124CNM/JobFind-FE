@@ -3,9 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, CircleDollarSign, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Post } from "@/models/post.interface";
+import { Link } from "react-router-dom";
+import { formatCurrency } from "@/utils/utils";
 
-const getBadgeColor = (type: Post["formOfWork"]) => {
-  switch (type) {
+const getBadgeColor = (type: Post["form_of_work"]) => {
+  switch (type.name) {
     case "Part-time":
       return "bg-[#00b5e2] hover:bg-[#00b5e2]/80";
     case "Full-time":
@@ -26,28 +28,30 @@ export default function JobItem(data: Post) {
     >
       <div className="space-y-2 w-full sm:w-auto mb-4 sm:mb-0">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <h3 className="text-lg sm:text-xl font-semibold">{data.title}</h3>
+          <h3 className="text-lg sm:text-xl font-semibold">
+            <Link to={`/posts/${data.id}`}>{data.title}</Link>
+          </h3>
           <Badge
             className={cn(
               "text-white text-xs sm:text-sm",
-              getBadgeColor(data.formOfWork)
+              getBadgeColor(data.form_of_work)
             )}
           >
-            {data.formOfWork}
+            {data.form_of_work.name}
           </Badge>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Building2 className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{data.company}</span>
+            <span className="truncate">{data.company.name}</span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{data.area}</span>
+            <span className="truncate">{data.area?.name}</span>
           </div>
           <div className="flex items-center gap-2">
             <CircleDollarSign className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{data.salary}</span>
+            <span className="truncate">{formatCurrency(data.salary)}</span>
           </div>
         </div>
       </div>

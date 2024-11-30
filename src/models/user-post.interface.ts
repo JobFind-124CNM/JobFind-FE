@@ -1,12 +1,7 @@
-import { Post } from "@/models/post.interface";
+import { Pivot } from "@/models/pivot-user-post";
 import { User } from "@/models/user.interface";
 
 export interface UserPost {
     user: User;
-    post: Post;
-    coverLetter: string;
-    subject: string;
-    status: string;
-    created_at: string;
-    updated_at: string;
+    pivot: Pivot
 }
