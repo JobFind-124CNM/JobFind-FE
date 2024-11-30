@@ -4,19 +4,18 @@ import {
   LayoutDashboard,
   Users,
   Briefcase,
-  Wrench,
-  Clock,
   Building2,
   GraduationCap,
   Package,
   Eye,
   ChevronRight,
-  RollerCoaster,
   UserRoundCog,
   Tag,
   Newspaper,
+  ChartAreaIcon,
+  BookAIcon,
+  BuildingIcon,
 } from "lucide-react";
-import { useState } from "react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -64,7 +63,22 @@ export default function AdminSidebar({ isOpen }: SidebarProps) {
     {
       title: "Quản lý hình thức làm việc",
       icon: <Building2 className="h-5 w-5" />,
-      href: "/admin/work-types",
+      href: "/admin/form-of-works",
+    },
+    {
+      title: "Quản lý khu vực",
+      icon: <ChartAreaIcon className="h-5 w-5" />,
+      href: "/admin/areas",
+    },
+    {
+      title: "Quản lý danh mục làm việc",
+      icon: <BookAIcon className="h-5 w-5" />,
+      href: "/admin/categories",
+    },
+    {
+      title: "Quản lý công ty",
+      icon: <BuildingIcon className="h-5 w-5" />,
+      href: "/admin/companies",
     },
     {
       title: "Quản lý khoảng lương",

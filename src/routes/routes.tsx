@@ -18,6 +18,11 @@ import CreatePost from "@/pages/Admin/Posts/CreatePost";
 import PostManagement from "@/pages/Admin/Posts/HRPostManagemet";
 import PostDetail from "@/pages/Admin/Posts/PostDetail";
 import CandidateDetail from "@/pages/Admin/Posts/CandidateApplied";
+import CompanyManagement from "@/pages/Admin/Companies/CompanyManagement";
+import LevelManagement from "@/pages/Admin/Levels/LevelManagement";
+import AreaManagement from "@/pages/Admin/Areas/AreaManagement";
+import CategoryManagement from "@/pages/Admin/Categories/CategoryManagement";
+import FormOfWorkManagement from "@/pages/Admin/FormOfWorks/FormOfWorkManagement";
 
 const routers = createBrowserRouter([
   {
@@ -71,6 +76,11 @@ const routers = createBrowserRouter([
           { path: "create", element: <CreatePost /> },
         ],
       },
+      { path: "companies", element: <CompanyManagement /> },
+      { path: "levels", element: <LevelManagement /> },
+      { path: "areas", element: <AreaManagement /> },
+      { path: "categories", element: <CategoryManagement /> },
+      { path: "form-of-works", element: <FormOfWorkManagement /> },
     ],
   },
 ]);
