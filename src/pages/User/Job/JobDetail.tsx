@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -13,32 +14,35 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Post } from "@/models/post.interface";
 import { FileText } from "lucide-react";
-
-const post: Post = {
-  id: 1,
-  title: "Digital Marketer",
-  description:
-    "It is a long established fact that a reader will beff distracted by vbthe creadable content of a page when looking at its layout. The pointf of using Lorem Ipsum is that it has ahf mcore or-lgess normal distribution of letters, as opposed to using, Content here content here making it look like readable.",
-  status: "Full Time",
-  created_at: "12 Aug 2019",
-  updated_at: "12 Aug 2019",
-  benefit:
-    "It is a long established fact that a reader will beff distracted by vbthe creadable content of a page when looking at its layout.",
-  company: "Creative Agency",
-  formOfWork: "Full Time",
-  salary: "$3500 - $4000",
-  caterory: "Digital Marketing",
-  amount: 2,
-  due_at: "12 Sep 2020",
-  area: "Athens, Greece",
-  qualification: "3 or more years of professional design experience",
-};
+import api from "@/utils/api";
+import { format } from "date-fns";
+import { showToast, ToastContainer } from "@/utils/toastConfig";
+import { formatCurrency } from "@/utils/utils";
 
 export default function JobDetail() {
+  const { id } = useParams<{ id: string }>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [subject, setSubject] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
   const [cvPreview, setCvPreview] = useState<File | null>(null);
+  const [post, setPost] = useState<Post | null>(null);
+  const [isLoading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getPost();
+  }, [id]);
+
+  const getPost = async () => {
+    try {
+      const response = await api.get(`/posts/${id}`);
+      console.log("Post:", response.data.data);
+
+      setPost(response.data.data);
+    } catch (error) {
+      console.error("Error fetching post:", error);
+    }
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -48,13 +52,41 @@ export default function JobDetail() {
     }
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Here you would typically send the application data to your backend
-    console.log("Cover Letter:", coverLetter);
-    console.log("CV:", selectedFile);
-    setIsDialogOpen(false);
+    setLoading(true);
+
+    if (!selectedFile) {
+      console.error("CV file is required");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("cv", selectedFile);
+    formData.append("cover_letter", coverLetter);
+    formData.append("subject", post?.title || "");
+
+    try {
+      const response = await api.post(`posts/${post?.id}/apply`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+      console.log("Application submitted:", response.data.data);
+
+      setIsDialogOpen(false);
+      showToast("Submitted successfully", "success");
+    } catch (error) {
+      console.error("Error submitting application:", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (!post) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="max-w-[1320px] mx-auto px-6 py-24">
@@ -63,7 +95,7 @@ export default function JobDetail() {
         <div className="lg:col-span-2">
           <div className="flex items-start gap-6 mb-8">
             <img
-              src="/company-logo.webp"
+              src={post.company?.logo}
               alt="Company logo"
               className="w-16 h-16 rounded-lg border p-2"
             />
@@ -72,35 +104,57 @@ export default function JobDetail() {
                 {post.title}
               </h1>
               <div className="flex items-center gap-4 text-gray-500">
-                <span>{post.caterory}</span>
+                <span>{post.category.name}</span>
                 <span>•</span>
-                <span>{post.area}</span>
+                <span>{post.area?.name}</span>
                 <span>•</span>
-                <span>{post.salary}</span>
+                <span>{formatCurrency(post.salary)}</span>
               </div>
             </div>
           </div>
 
-          {/* Job Description */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Job Description</h2>
-            <p className="text-gray-600">{post.description}</p>
+            <div
+              className="text-gray-600"
+              dangerouslySetInnerHTML={{ __html: post.description }}
+            />
           </div>
 
-          {/* Required Knowledge */}
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">
               Required Knowledge, Skills, and Abilities
             </h2>
-            <ul className="list-disc list-inside space-y-2 text-gray-600">
-              <li>{post.qualification}</li>
-            </ul>
+            <div
+              className="text-gray-600"
+              dangerouslySetInnerHTML={{ __html: post.qualification }}
+            />
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Benefits</h2>
+            <div
+              className="text-gray-600"
+              dangerouslySetInnerHTML={{ __html: post.benefit }}
+            />
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Technology</h2>
+            <div className="flex flex-wrap gap-2">
+              {post.tags?.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="px-2 py-1 bg-gray-100 text-sm rounded-lg"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-8">
-          {/* Job Overview */}
           <Card>
             <CardHeader>
               <CardTitle>Job Overview</CardTitle>
@@ -109,11 +163,11 @@ export default function JobDetail() {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Posted date :</span>
-                  <span>{post.created_at}</span>
+                  <span>{format(new Date(post.created_at), "dd/MM/yyyy")}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Location :</span>
-                  <span>{post.area}</span>
+                  <span>{post.area.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Vacancy :</span>
@@ -121,15 +175,15 @@ export default function JobDetail() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Job nature :</span>
-                  <span>{post.formOfWork}</span>
+                  <span>{post.form_of_work?.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Salary :</span>
-                  <span>{post.salary}</span>
+                  <span>{formatCurrency(post.salary)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Application date :</span>
-                  <span>{post.due_at}</span>
+                  <span className="text-gray-600">Due date :</span>
+                  <span>{format(new Date(post.due_at), "dd/MM/yyyy")}</span>
                 </div>
               </div>
               <div className="mt-4">
@@ -148,6 +202,24 @@ export default function JobDetail() {
                     <form onSubmit={handleSubmit} className="space-y-6 mt-4">
                       <div className="space-y-2">
                         <Label
+                          htmlFor="subject"
+                          className="text-lg font-semibold"
+                        >
+                          Subject
+                        </Label>
+
+                        <Input
+                          id="subject"
+                          type="text"
+                          placeholder="Enter subject"
+                          className="w-full"
+                          value={subject}
+                          onChange={(e: any) => setSubject(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label
                           htmlFor="cover-letter"
                           className="text-lg font-semibold"
                         >
@@ -159,6 +231,7 @@ export default function JobDetail() {
                           className="min-h-[200px]"
                           value={coverLetter}
                           onChange={(e: any) => setCoverLetter(e.target.value)}
+                          required
                         />
                       </div>
                       <div className="space-y-2">
@@ -207,8 +280,12 @@ export default function JobDetail() {
                           </div>
                         </Card>
                       </div>
-                      <Button type="submit" className="w-full">
-                        Submit Application
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Submitting..." : "Submit"}
                       </Button>
                     </form>
                   </DialogContent>
@@ -223,39 +300,42 @@ export default function JobDetail() {
               <CardTitle>Company Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <h3 className="font-semibold mb-2">Colorlib</h3>
-              <p className="text-gray-600 mb-4">
-                It is a long established fact that a reader will be distracted
-                by the readable content of a page when looking at its layout.
-              </p>
+              <Link to={`/company/${post.company.id}`}>
+                <h3 className="font-semibold mb-2 underline">
+                  {post.company.name}
+                </h3>
+              </Link>
+              <p className="text-gray-600 mb-4">{post.company.description}</p>
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <span className="text-gray-600">Name:</span>
-                  <span>Colorlib</span>
+
+                  <span>{post.company.name}</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gray-600">Web:</span>
                   <a
-                    href="http://colorlib.com"
+                    href={post.company.website}
                     className="text-primary hover:underline"
                   >
-                    colorlib.com
+                    {post.company.website}
                   </a>
                 </div>
-                <div className="flex gap-2">
+                {/* <div className="flex gap-2">
                   <span className="text-gray-600">Email:</span>
                   <a
-                    href="mailto:carrier.colorlib@gmail.com"
+                    href={`mailto:${post.company.email}`}
                     className="text-primary hover:underline"
                   >
-                    carrier.colorlib@gmail.com
+                    {post.company.email}
                   </a>
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }

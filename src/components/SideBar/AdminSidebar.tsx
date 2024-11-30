@@ -11,6 +11,7 @@ import {
   ChevronRight,
   UserRoundCog,
   Tag,
+  Newspaper,
   ChartAreaIcon,
   BookAIcon,
   BuildingIcon,
@@ -28,6 +29,11 @@ export default function AdminSidebar({ isOpen }: SidebarProps) {
       title: "Dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
       href: "/admin",
+    },
+    {
+      title: "Quản lý bài đăng",
+      icon: <Newspaper className="h-5 w-5" />,
+      href: "/admin/posts",
     },
     {
       title: "Quản lý User",

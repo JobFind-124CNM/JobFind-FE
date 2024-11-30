@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -27,85 +27,28 @@ import {
   Briefcase,
 } from "lucide-react";
 import { UserPost } from "@/models/user-post.interface";
-
-const mockApplications: UserPost[] = [
-  {
-    user: {
-      id: 100,
-      username: "user_0",
-      email: "user0@example.com",
-      status: "active",
-      avatar: "https://example.com/avatar0.jpg",
-      created_at: "2024-11-19T09:00:00.000Z",
-      updated_at: "2024-11-19T09:00:00.000Z",
-      phone: "123-456-7800",
-      role: "user",
-      gender: "male",
-    },
-    post: {
-      id: 200,
-      title: "Job Title 0",
-      description: "Job description for job 0.",
-      status: "open",
-      created_at: "2024-11-19T09:00:00.000Z",
-      updated_at: "2024-11-19T09:00:00.000Z",
-      benefit: "Benefit package 0",
-      company: "Company 0",
-      formOfWork: "Full-time",
-      salary: "$50k - $60k/year",
-      caterory: "IT",
-      amount: 1,
-      due_at: "2024-11-26T09:00:00.000Z",
-      area: "City 0, Country",
-      qualification: "Qualification 0",
-    },
-    coverLetter: "Cover letter content for job 0.",
-    subject: "Subject for job 0",
-    status: "Submitted",
-    created_at: "2024-11-19T09:00:00.000Z",
-    updated_at: "2024-11-19T09:00:00.000Z",
-  },
-  {
-    user: {
-      id: 101,
-      username: "user_1",
-      email: "user1@example.com",
-      status: "active",
-      avatar: "https://example.com/avatar1.jpg",
-      created_at: "2024-11-19T09:00:00.000Z",
-      updated_at: "2024-11-19T09:00:00.000Z",
-      phone: "123-456-7810",
-      role: "user",
-      gender: "female",
-    },
-    post: {
-      id: 201,
-      title: "Job Title 1",
-      description: "Job description for job 1.",
-      status: "open",
-      created_at: "2024-11-19T09:00:00.000Z",
-      updated_at: "2024-11-19T09:00:00.000Z",
-      benefit: "Benefit package 1",
-      company: "Company 1",
-      formOfWork: "Full-time",
-      salary: "$51k - $61k/year",
-      caterory: "IT",
-      amount: 2,
-      due_at: "2024-11-27T09:00:00.000Z",
-      area: "City 1, Country",
-      qualification: "Qualification 1",
-    },
-    coverLetter: "Cover letter content for job 1.",
-    subject: "Subject for job 1",
-    status: "Pending",
-    created_at: "2024-11-19T09:00:00.000Z",
-    updated_at: "2024-11-19T09:00:00.000Z",
-  },
-];
+import api from "@/utils/api";
 
 export default function JobApplicationHistory() {
-  const [applications, setApplications] =
-    useState<UserPost[]>(mockApplications);
+  const [applications, setApplications] = useState<UserPost[]>([]);
+
+  useEffect(() => {
+    getApplications();
+  }, []);
+
+  const getApplications = async () => {
+    const response = await api.get("/posts/applied", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      },
+    });
+
+    console.log(response.data.data);
+
+    if (response.status === 200) {
+      setApplications(response.data.data);
+    }
+  };
 
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -139,8 +82,8 @@ export default function JobApplicationHistory() {
   const filteredApplications = sortedApplications.filter(
     (app) =>
       (filterStatus === "all" || app.status === filterStatus) &&
-      (app.post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.post.company.toLowerCase().includes(searchTerm.toLowerCase()))
+      (app.post?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.post.company.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleSort = (key: string) => {
@@ -173,6 +116,8 @@ export default function JobApplicationHistory() {
         return "bg-red-500";
       case "Offered":
         return "bg-green-500";
+      case "Applied":
+        return "bg-orange-500";
       default:
         return "bg-gray-500";
     }
@@ -209,7 +154,7 @@ export default function JobApplicationHistory() {
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
               <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Submitted">Submitted</SelectItem>
+              <SelectItem value="Applied">Applied</SelectItem>
               <SelectItem value="Rejected">Rejected</SelectItem>
               <SelectItem value="Offered">Offered</SelectItem>
             </SelectContent>
@@ -271,7 +216,7 @@ export default function JobApplicationHistory() {
                 <TableCell>
                   <div className="flex items-center">
                     <Building2 className="mr-2 h-4 w-4 text-gray-400" />
-                    {application.post.company}
+                    {application.post.company.name}
                   </div>
                 </TableCell>
                 <TableCell>

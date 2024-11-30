@@ -7,9 +7,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Area } from "@/models/area.interface";
+import { Category } from "@/models/category.interface";
+import api from "@/utils/api";
 import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Banner() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [locations, setLocations] = useState<Area[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+
+  const getCategories = async () => {
+    const response = await api.get("/categories");
+
+    if (response.status === 200) {
+      setCategories(response.data.data);
+    }
+  };
+
+  const getLocations = async () => {
+    const response = await api.get("/areas");
+
+    if (response.status === 200) {
+      setLocations(response.data.data);
+    }
+  };
+
+  useEffect(() => {
+    getCategories();
+    getLocations();
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const queryParams = new URLSearchParams();
+    if (searchQuery) queryParams.append("q", searchQuery);
+    if (selectedCategory) queryParams.append("category_id", selectedCategory);
+    if (selectedLocation) queryParams.append("area_id", selectedLocation);
+
+    navigate(`/jobs?${queryParams.toString()}`);
+  };
+
   return (
     <section
       className="min-h-screen"
@@ -31,32 +76,45 @@ export default function Banner() {
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <form className="flex flex-col sm:flex-row gap-4">
+            <form
+              className="flex flex-col sm:flex-row gap-4"
+              onSubmit={handleSearch}
+            >
               <Input
                 type="text"
                 placeholder="eg. Web Developer"
                 className="flex-1"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Select>
-                <SelectTrigger className="w-full sm:w-[200px]">
+              <Select onValueChange={(value) => setSelectedCategory(value)}>
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="development">Development</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="sales">Sales</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem
+                      key={category.id}
+                      value={category.id.toString()}
+                    >
+                      {category.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <Select>
-                <SelectTrigger className="w-full sm:w-[200px]">
+              <Select onValueChange={(value) => setSelectedLocation(value)}>
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Localtion" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="hn">Hà Nội</SelectItem>
-                  <SelectItem value="dn">Đà Nẵng</SelectItem>
-                  <SelectItem value="tphcm">TP. HCM</SelectItem>
-                  <SelectItem value="cantho">Cần Thơ</SelectItem>
+                  {locations.map((location) => (
+                    <SelectItem
+                      key={location.id}
+                      value={location.id.toString()}
+                    >
+                      {location.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Button type="submit" variant="default" className="sm:w-[120px]">

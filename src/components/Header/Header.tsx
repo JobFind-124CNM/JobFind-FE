@@ -17,11 +17,13 @@ import { User } from "@/models/user.interface";
 import api from "@/utils/api";
 import { useDispatch } from "react-redux";
 import { logout, setUser } from "@/store/userSlice";
+import { Role } from "@/models/role.interface";
 
 export default function Header() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [currentUser, setCurrentUser] = useState<User>();
+  const [isAdminOrHr, setIsAdminOrHr] = useState(false);
 
   const dispatch = useDispatch();
 
@@ -37,6 +39,10 @@ export default function Header() {
           const user: User = response.data.data;
           setCurrentUser(user);
           dispatch(setUser(user));
+
+          if (user.roles) {
+            checkRole(user.roles);
+          }
         })
         .catch((error) => {
           console.error("Failed to fetch user data:", error);
@@ -44,7 +50,7 @@ export default function Header() {
           localStorage.removeItem("access_token");
         });
     }
-  }, []);
+  }, [dispatch]);
 
   const handleLogin = () => {
     navigate("/auth/login");
@@ -52,6 +58,13 @@ export default function Header() {
 
   const handleRegister = () => {
     navigate("/auth/register");
+  };
+
+  const checkRole = (roles: Role[]) => {
+    const isAdmin = roles.some((role) => role.name.toUpperCase() === "ADMIN");
+    const isHr = roles.some((role) => role.name.toUpperCase() === "HR");
+
+    setIsAdminOrHr(isAdmin || isHr);
   };
 
   const handleLogout = () => {
@@ -129,6 +142,14 @@ export default function Header() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuGroup>
+                    {isAdminOrHr && (
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => navigate("/admin/posts")}
+                      >
+                        Management
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       className="cursor-pointer"
                       onClick={() => navigate("/profile")}

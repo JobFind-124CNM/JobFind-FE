@@ -13,12 +13,37 @@ import {
   DropdownMenuGroup,
   DropdownMenuSeparator,
 } from "@radix-ui/react-dropdown-menu";
+import { useDispatch } from "react-redux";
+import { logout } from "@/store/userSlice";
+import { useNavigate } from "react-router-dom";
+import api from "@/utils/api";
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    const accessToken = localStorage.getItem("access_token");
+
+    api
+      .get("/auth/logout", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      .then(() => {
+        localStorage.removeItem("access_token");
+        dispatch(logout());
+
+        navigate("/");
+      })
+      .catch((error) => {
+        console.error("Failed to logout:", error);
+      });
+  };
+
   return (
     <header className="fixed top-0 right-0 z-30 flex h-16 items-center border-b bg-white w-full">
       <div className="flex items-center h-full">
@@ -53,7 +78,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
                 <DropdownMenuItem>Settings</DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer text-rose-600">
+              <DropdownMenuItem
+                className="cursor-pointer text-rose-600"
+                onClick={handleLogout}
+              >
                 Logout
                 <DropdownMenuShortcut>
                   <LogOut className="w-4" />

@@ -51,6 +51,7 @@ import { format } from "date-fns";
 import { PaginationInfo } from "@/models/PaginationInfo.interface";
 import { Role } from "@/models/role.interface";
 import { Textarea } from "@/components/ui/textarea";
+import { showToast, ToastContainer } from "@/utils/toastConfig";
 
 export default function RoleManagement() {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -96,6 +97,8 @@ export default function RoleManagement() {
       setIsAddDialogOpen(false);
       setNewRole({ name: "", description: "" });
       getRoles(pagination?.current_page, pagination?.size);
+
+      showToast("Role added successfully", "success");
     } catch (error) {
       console.error("Error adding tag:", error);
     }
@@ -113,6 +116,8 @@ export default function RoleManagement() {
       setIsEditDialogOpen(false);
       setEditingRole(null);
       getRoles(pagination?.current_page, pagination?.size);
+
+      showToast("Role updated successfully", "success");
     } catch (error) {
       console.error("Error updating tag:", error);
     }
@@ -403,6 +408,7 @@ export default function RoleManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ToastContainer />
     </AdminLayout>
   );
 }

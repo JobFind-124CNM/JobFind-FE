@@ -14,6 +14,10 @@ import TagManagement from "@/pages/Admin/Tags/TagManagement";
 import RoleManagement from "@/pages/Admin/Roles/RoleManagement";
 import JobSearch from "@/pages/User/Job/JobSearch";
 import UserManagement from "@/pages/Admin/Users/UserManagement";
+import CreatePost from "@/pages/Admin/Posts/CreatePost";
+import PostManagement from "@/pages/Admin/Posts/HRPostManagemet";
+import PostDetail from "@/pages/Admin/Posts/PostDetail";
+import CandidateDetail from "@/pages/Admin/Posts/CandidateApplied";
 import CompanyManagement from "@/pages/Admin/Companies/CompanyManagement";
 import LevelManagement from "@/pages/Admin/Levels/LevelManagement";
 import AreaManagement from "@/pages/Admin/Areas/AreaManagement";
@@ -52,15 +56,31 @@ const routers = createBrowserRouter([
   },
   {
     path: "/admin",
+    element: <AuthGuard />,
     children: [
       { path: "tags", element: <TagManagement /> },
       { path: "roles", element: <RoleManagement /> },
       { path: "users", element: <UserManagement /> },
+      {
+        path: "posts",
+        children: [
+          { path: "", element: <PostManagement /> },
+          {
+            path: ":id",
+            element: <PostDetail />,
+          },
+          {
+            path: ":postId/candidates/:candidateId",
+            element: <CandidateDetail />,
+          },
+          { path: "create", element: <CreatePost /> },
+        ],
+      },
       { path: "companies", element: <CompanyManagement /> },
       { path: "levels", element: <LevelManagement /> },
       { path: "areas", element: <AreaManagement /> },
       { path: "categories", element: <CategoryManagement /> },
-      { path: "form-of-works", element: <FormOfWorkManagement /> }
+      { path: "form-of-works", element: <FormOfWorkManagement /> },
     ],
   },
 ]);

@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -36,62 +37,64 @@ import {
 
 import { Label } from "@/components/ui/label";
 import {
-  ChevronUp,
-  ChevronDown,
   Edit,
   Trash,
+  Plus,
   Search,
   ChevronRight,
   ChevronLeft,
+  Eye,
+  Loader2,
 } from "lucide-react";
 import api from "@/utils/api";
+import { Tag } from "@/models/tag.interface";
 import { format } from "date-fns";
 import { PaginationInfo } from "@/models/PaginationInfo.interface";
-import { User } from "@/models/user.interface";
-import { Badge } from "@/components/ui/badge";
-import { Role } from "@/models/role.interface";
-import { MultiSelect } from "@/components/ui/multi-select";
+import { Post } from "@/models/post.interface";
 import { showToast, ToastContainer } from "@/utils/toastConfig";
-import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
-export default function UserManagement() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
+export default function PostManagement() {
+  const [posts, setPosts] = useState<Post[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-  const [sortField, setSortField] = useState<keyof User>("username");
+  const [sortField, setSortField] = useState<keyof Tag>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [newTag, setNewTag] = useState({ name: "" });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deletingUser, setDeletingUser] = useState<User | null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
+  const [deletingPost, setDeletingPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
-    getUsers();
-    getRoles();
+    getUserCompanyPost();
   }, []);
 
-  const getRoles = async () => {
+  const getUserCompanyPost = async (
+    page = 1,
+    size = 5,
+    search = "",
+    area_id = ""
+  ) => {
     try {
-      const response = await api.get("roles/all");
-      setRoles(response.data.data);
-    } catch (error) {
-      console.error("Error fetching roles:", error);
-    }
-  };
-
-  const getUsers = async (page = 1, size = 5, search = "") => {
-    try {
-      const response = await api.get(`users?q=${search}&p=${page}&s=${size}`);
-      setUsers(response.data.data);
+      const response = await api.get(
+        `posts/user-company-posts?q=${search}&p=${page}&s=${size}&area_id=${area_id}`
+      );
+      setPosts(response.data.data);
       setPagination(response.data.pagination);
+
+      setLoading(false);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error("Error fetching tags:", error);
     }
   };
 
-  const handleSort = (field: keyof User) => {
+  const handleSort = (field: keyof Tag) => {
     if (field === sortField) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
@@ -101,83 +104,100 @@ export default function UserManagement() {
     // You might want to call an API endpoint here to sort on the server-side
   };
 
-  const handleDeleteUser = async (id: number) => {
+  const handleAddTag = async () => {
+    // try {
+    //   const response = await api.post("tags", newTag);
+    //   setPosts([...tags, response.data.data]);
+    //   setIsAddDialogOpen(false);
+    //   setNewTag({ name: "" });
+    //   getUserCompanyPost(pagination?.current_page, pagination?.size);
+    // } catch (error) {
+    //   console.error("Error adding tag:", error);
+    // }
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
     try {
-      await api.delete(`users/${id}`).then(() => {
-        setUsers(users.filter((user) => user.id !== id));
-        setIsDeleteDialogOpen(false);
-        getUsers(pagination?.current_page, pagination?.size);
-      });
+      const response = await api.put(`posts/${editingPost.id}`, editingPost);
+      setPosts(
+        posts.map((tag) =>
+          tag.id === editingPost.id ? response.data.data : tag
+        )
+      );
+      setIsEditDialogOpen(false);
+      setEditingPost(null);
+      getUserCompanyPost(pagination?.current_page, pagination?.size);
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error("Error updating tag:", error);
     }
   };
 
-  const handleUpdateUser = async () => {
-    if (!editingUser) return;
-
+  const handleDeletePost = async (id: number) => {
     try {
-      const roleNames = selectedRoles.map((role) => role.name);
-      await api
-        .post(`users/${editingUser.id}/roles`, {
-          role_names: roleNames,
-        })
-        .then(() => {
-          setUsers((prevUsers) =>
-            prevUsers.map((user) =>
-              user.id === editingUser.id
-                ? { ...editingUser, roles: selectedRoles }
-                : user
-            )
-          );
-          setIsEditDialogOpen(false);
-          showToast("Updated user roles successfully", "success");
-        });
+      await api.delete(`posts/${id}`);
+      setPosts(posts.filter((tag) => tag.id !== id));
+      setIsDeleteDialogOpen(false);
+      getUserCompanyPost(pagination?.current_page, pagination?.size);
+
+      showToast("Posts deleted successfully", "success");
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error("Error deleting tag:", error);
     }
   };
 
   const handleSearch = () => {
-    getUsers(1, pagination?.size, searchTerm);
+    getUserCompanyPost(1, pagination?.size, searchTerm);
   };
 
   const handlePageChange = (page: number) => {
-    getUsers(page, pagination?.size);
+    getUserCompanyPost(page, pagination?.size);
   };
 
   const handlePageSizeChange = (size: number) => {
-    getUsers(1, size);
+    getUserCompanyPost(1, size);
   };
 
   const getStatusVariant = (status: string) => {
     switch (status.toLowerCase()) {
-      case "active":
+      case "published":
         return "active";
-      case "inactive":
-        return "inactive";
-      case "banned":
-        return "destructive";
+      case "draft":
+        return "outline";
       default:
         return "outline";
     }
   };
 
-  const handleSelectUser = (user: User) => {
-    setEditingUser(user);
-    setSelectedRoles(user.roles || []);
-    setIsEditDialogOpen(true);
-  };
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!posts) {
+    return (
+      <AdminLayout>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Post not found</h1>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
       <div className="space-y-6 bg-white p-4 rounded">
-        <h1 className="text-2xl font-bold">User Management</h1>
+        <h1 className="text-2xl font-bold">Post Management</h1>
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Input
-              placeholder="Search by name"
+              placeholder="Search by title, description"
               className="max-w-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -189,78 +209,89 @@ export default function UserManagement() {
               <Search />
             </Button>
           </div>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus /> Add new
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Thêm tag mới</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Tên
+                  </Label>
+                  <Input
+                    id="name"
+                    value={newTag.name}
+                    onChange={(e) =>
+                      setNewTag({ ...newTag, name: e.target.value })
+                    }
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <Button onClick={handleAddTag}>Thêm</Button>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>No.</TableHead>
-              <TableHead>Avatar</TableHead>
-              <TableHead
-                className="cursor-pointer"
-                onClick={() => handleSort("username")}
-              >
-                Username{" "}
-                {sortField === "username" &&
-                  (sortDirection === "asc" ? (
-                    <ChevronUp className="inline" />
-                  ) : (
-                    <ChevronDown className="inline" />
-                  ))}
-              </TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Work type</TableHead>
+              <TableHead>Area</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Amount</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Roles</TableHead>
-              <TableHead>Created at</TableHead>
-              <TableHead>Updated at</TableHead>
+              <TableHead>Post date</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length > 0 ? (
-              users.map((user, index) => (
-                <TableRow key={user.id}>
+            {posts.length > 0 ? (
+              posts.map((post, index) => (
+                <TableRow key={post.id}>
                   <TableCell>
                     {pagination ? pagination.from + index : index + 1}
                   </TableCell>
+                  <TableCell>{post.company.name}</TableCell>
                   <TableCell>
-                    <img
-                      src={user.avatar ? user.avatar : "/default_avatar.png"}
-                      alt={user.username}
-                      className="w-10 h-10 rounded-full"
-                    />
+                    {post.title.length > 30
+                      ? `${post.title.slice(0, 30)}...`
+                      : post.title}
                   </TableCell>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>{user.email}</TableCell>
+
+                  <TableCell>{post.form_of_work.name}</TableCell>
+                  <TableCell>{post.area.name}</TableCell>
+                  <TableCell>{post.category.name}</TableCell>
+                  <TableCell>{post.amount}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(user.status)}>
-                      {user.status.toUpperCase()}
+                    <Badge variant={getStatusVariant(post.status)}>
+                      {post.status.toUpperCase()}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {user.roles?.map((role) => role.name).join(", ")}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(user.created_at), "dd/MM/yyyy HH:mm")}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(user.updated_at), "dd/MM/yyyy HH:mm")}
+                    {format(post.created_at, "dd/MM/yyyy HH:mm")}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
-                      variant="outline"
-                      className="mr-2"
-                      onClick={() => {
-                        handleSelectUser(user);
-                      }}
+                      className="mr-2 bg-blue-600 hover:bg-blue-700"
+                      onClick={() => navigate(`/admin/posts/${post.id}`)}
                     >
-                      <Edit />
+                      <Eye />
                     </Button>
                     <Button
                       variant="default"
                       onClick={() => {
                         setIsDeleteDialogOpen(true);
-                        setDeletingUser(user);
+                        setDeletingPost(post);
                       }}
                     >
                       <Trash />
@@ -270,7 +301,7 @@ export default function UserManagement() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9}>
+                <TableCell colSpan={3}>
                   <span className="text-center py-4">No data</span>
                 </TableCell>
               </TableRow>
@@ -280,7 +311,7 @@ export default function UserManagement() {
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span>Show</span>
+            <span>Hiển thị</span>
             <Select
               value={pagination?.size.toString()}
               onValueChange={(value) => handlePageSizeChange(Number(value))}
@@ -295,7 +326,7 @@ export default function UserManagement() {
                 <SelectItem value="50">50</SelectItem>
               </SelectContent>
             </Select>
-            <span>items per page</span>
+            <span>trên trang</span>
           </div>
           <div className="flex justify-center gap-2">
             <Button
@@ -349,85 +380,26 @@ export default function UserManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{`User ${editingUser?.email}`}</DialogTitle>
+            <DialogTitle>{`Cập nhật tag ${editingPost?.id}`}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-username" className="text-right">
-                Username
+              <Label htmlFor="edit-name" className="text-right">
+                Tên
               </Label>
               <Input
-                id="edit-username"
-                value={editingUser?.username || ""}
+                id="edit-name"
+                value={editingPost?.title || ""}
                 onChange={(e) =>
-                  setEditingUser((prev) =>
-                    prev ? { ...prev, username: e.target.value } : null
+                  setEditingPost((prev) =>
+                    prev ? { ...prev, name: e.target.value } : null
                   )
                 }
-                readOnly
                 className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-email" className="text-right">
-                Email
-              </Label>
-              <Input
-                type="email"
-                id="edit-email"
-                value={editingUser?.email || ""}
-                onChange={(e) =>
-                  setEditingUser((prev) =>
-                    prev ? { ...prev, email: e.target.value } : null
-                  )
-                }
-                readOnly
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-status" className="text-right">
-                Status
-              </Label>
-              <Switch
-                id="edit-status"
-                checked={editingUser?.status === "active"}
-                onCheckedChange={() =>
-                  setEditingUser((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          status:
-                            prev.status === "active" ? "inactive" : "active",
-                        }
-                      : null
-                  )
-                }
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-roles" className="text-right">
-                Roles
-              </Label>
-              <MultiSelect
-                className="col-span-3"
-                options={roles.map((role) => ({
-                  label: role.name,
-                  value: role.id.toString(),
-                }))}
-                onValueChange={(values) => {
-                  const selected = roles.filter((role) =>
-                    values.includes(role.id.toString())
-                  );
-                  setSelectedRoles(selected);
-                }}
-                defaultValue={selectedRoles.map((role) => role.id.toString())}
-                placeholder="Select roles"
-                variant="inverted"
               />
             </div>
           </div>
-          <Button onClick={handleUpdateUser}>Update</Button>
+          <Button onClick={handleUpdatePost}>Cập nhật</Button>
         </DialogContent>
       </Dialog>
 
@@ -438,16 +410,16 @@ export default function UserManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{`Delete ${
-              deletingUser?.email ?? ""
+              deletingPost?.title ?? ""
             }`}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this user?
+              Are you sure you want to delete this tag?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingUser && handleDeleteUser(deletingUser.id)}
+              onClick={() => deletingPost && handleDeletePost(deletingPost.id)}
             >
               Delete
             </AlertDialogAction>

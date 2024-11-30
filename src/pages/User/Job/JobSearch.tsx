@@ -1,5 +1,4 @@
 import JobItem from "@/components/Job/JobItem";
-import JobList from "@/components/Job/JobList";
 import {
   Card,
   CardContent,
@@ -8,107 +7,101 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DualRangeSlider } from "@/components/ui/dual-range-slider";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Slider } from "@/components/ui/slider";
+import { Area } from "@/models/area.interface";
+import { Category } from "@/models/category.interface";
 import { Post } from "@/models/post.interface";
+import api from "@/utils/api";
 import { ListFilter } from "lucide-react";
-import { useState } from "react";
-
-const jobs: Post[] = [
-  {
-    id: 1,
-    title: "Software Engineer",
-    description: "Responsible for developing and maintaining web applications.",
-    status: "Active",
-    created_at: "2024-11-18T09:00:00Z",
-    updated_at: "2024-11-18T09:00:00Z",
-    benefit: "Health insurance, remote work options, and annual bonuses.",
-    company: "TechCorp Inc.",
-    formOfWork: "Full-time",
-    salary: "80,000 - 100,000 USD/year",
-    caterory: "IT",
-    amount: 3,
-    due_at: "2024-12-31T23:59:59Z",
-    area: "San Francisco, CA",
-  },
-  {
-    id: 2,
-    title: "Marketing Specialist",
-    description:
-      "Develop and execute marketing strategies to boost brand visibility.",
-    status: "Open",
-    created_at: "2024-11-10T08:30:00Z",
-    updated_at: "2024-11-15T10:45:00Z",
-    benefit: "Flexible working hours and paid vacation.",
-    company: "MarketPros LLC",
-    formOfWork: "Part-time",
-    salary: "30,000 - 40,000 USD/year",
-    caterory: "Marketing",
-    amount: 2,
-    due_at: "2024-12-15T23:59:59Z",
-    area: "New York, NY",
-  },
-  {
-    id: 3,
-    title: "Graphic Designer",
-    description: "Create engaging visuals and graphics for various media.",
-    status: "Closed",
-    created_at: "2024-10-01T14:00:00Z",
-    updated_at: "2024-10-20T16:00:00Z",
-    benefit: "Training programs and career growth opportunities.",
-    company: "DesignStudio Co.",
-    formOfWork: "Freelance",
-    salary: "25 USD/hour",
-    caterory: "Design",
-    amount: 1,
-    due_at: "2024-11-01T23:59:59Z",
-    area: "Remote",
-  },
-  {
-    id: 4,
-    title: "Project Manager",
-    description: "Manage projects and coordinate teams to meet deadlines.",
-    status: "Active",
-    created_at: "2024-11-01T09:00:00Z",
-    updated_at: "2024-11-18T10:00:00Z",
-    benefit: "Leadership training and performance bonuses.",
-    company: "BuildRight Inc.",
-    formOfWork: "Full-time",
-    salary: "90,000 - 120,000 USD/year",
-    caterory: "Management",
-    amount: 1,
-    due_at: "2024-12-25T23:59:59Z",
-    area: "Chicago, IL",
-  },
-  {
-    id: 5,
-    title: "Customer Support Representative",
-    description: "Provide exceptional customer service and resolve inquiries.",
-    status: "Open",
-    created_at: "2024-11-05T10:00:00Z",
-    updated_at: "2024-11-15T12:00:00Z",
-    benefit: "Work-from-home options and wellness programs.",
-    company: "SupportPlus Co.",
-    formOfWork: "Internship",
-    salary: "18 USD/hour",
-    caterory: "Customer Service",
-    amount: 5,
-    due_at: "2024-12-20T23:59:59Z",
-    area: "Remote",
-  },
-];
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function JobSearch() {
-  const [range, setRange] = useState<number[]>([50]);
+  const [jobs, setJobs] = useState<Post[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [range, setRange] = useState([0, 100]);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const query = params.get("q") || "";
+    const category = params.get("category_id") || "";
+    const area = params.get("area_id") || "";
+
+    setSearchQuery(query);
+    setSelectedCategory(category);
+    setLocationFilter(area);
+
+    fetchJobs(query, +category, +area);
+
+    getCategories();
+    getLocations();
+  }, [location.search]);
+
+  const fetchJobs = async (
+    query: string,
+    category: number,
+    location: number
+  ) => {
+    try {
+      const response = await api.get("/posts", {
+        params: {
+          q: query,
+          category_id: category,
+          area_id: location,
+        },
+      });
+      setJobs(response.data.data);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    }
+  };
+
+  const getCategories = async () => {
+    const response = await api.get("/categories");
+
+    if (response.status === 200) {
+      setCategories(response.data.data);
+    }
+  };
+
+  const getLocations = async () => {
+    const response = await api.get("/areas");
+
+    if (response.status === 200) {
+      setAreas(response.data.data);
+    }
+  };
+
+  const handleSearch = () => {
+    const queryParams = new URLSearchParams();
+    if (searchQuery.trim()) {
+      queryParams.append("s", searchQuery);
+    }
+    if (selectedCategory) {
+      queryParams.append("category_id", selectedCategory);
+    }
+    if (locationFilter) {
+      queryParams.append("area_id", locationFilter);
+    }
+    navigate(`/jobs?${queryParams.toString()}`);
+  };
 
   return (
     <div className="max-w-[1320px] mx-auto px-6 py-24">
@@ -129,20 +122,29 @@ export default function JobSearch() {
 
               <CardContent>
                 <div className="pb-6">
+                  <CardTitle className="text-xl pb-4">Search</CardTitle>
+                  <Input
+                    type="text"
+                    placeholder="Search for a job"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="pb-6">
                   <CardTitle className="text-xl pb-4">Job Category</CardTitle>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
+                  <Select onValueChange={(value) => setSelectedCategory(value)}>
+                    <SelectTrigger value={selectedCategory}>
+                      <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Fruits</SelectLabel>
-                        <SelectItem value="apple">Apple</SelectItem>
-                        <SelectItem value="banana">Banana</SelectItem>
-                        <SelectItem value="blueberry">Blueberry</SelectItem>
-                        <SelectItem value="grapes">Grapes</SelectItem>
-                        <SelectItem value="pineapple">Pineapple</SelectItem>
-                      </SelectGroup>
+                      {categories.map((category) => (
+                        <SelectItem
+                          key={category.id}
+                          value={category.id.toString()}
+                        >
+                          {category.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -181,93 +183,79 @@ export default function JobSearch() {
 
                 <div className="pb-6">
                   <CardTitle className="text-xl pb-4">Job Location</CardTitle>
-                  <Select>
+                  <Select
+                    value={locationFilter}
+                    onValueChange={(value) => setLocationFilter(value)}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a location" />
+                      <SelectValue placeholder="Location" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Fruits</SelectLabel>
-                        <SelectItem value="apple">Apple</SelectItem>
-                        <SelectItem value="banana">Banana</SelectItem>
-                        <SelectItem value="blueberry">Blueberry</SelectItem>
-                        <SelectItem value="grapes">Grapes</SelectItem>
-                        <SelectItem value="pineapple">Pineapple</SelectItem>
-                      </SelectGroup>
+                      {areas.map((area) => (
+                        <SelectItem key={area.id} value={area.id.toString()}>
+                          {area.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="pb-6">
-                  <CardTitle className="text-xl pb-4">Posted Within</CardTitle>
+                  <CardTitle className="text-xl pb-4">Experience</CardTitle>
                   <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="any" />
+                    <Checkbox className="w-6 h-6" id="no-experience" />
                     <label
-                      htmlFor="any"
+                      htmlFor="no-experience"
                       className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Any
+                      No experience
                     </label>
                   </div>
 
                   <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="Today" />
+                    <Checkbox className="w-6 h-6" id="1-2" />
                     <label
-                      htmlFor="Today"
+                      htmlFor="1-2"
                       className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Today
+                      1-2 years
                     </label>
                   </div>
                   <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="last-2-days" />
+                    <Checkbox className="w-6 h-6" id="3-6" />
                     <label
-                      htmlFor="last-2-days"
+                      htmlFor="3-6"
                       className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Last-2-days
+                      3-6 years
                     </label>
                   </div>
                   <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="last-3-days" />
+                    <Checkbox className="w-6 h-6" id="6+" />
                     <label
-                      htmlFor="last-3-days"
+                      htmlFor="6+"
                       className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Last-3-days
-                    </label>
-                  </div>
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="last-5-days" />
-                    <label
-                      htmlFor="last-5-days"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Last-5-days
-                    </label>
-                  </div>
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="last-10-days" />
-                    <label
-                      htmlFor="last-10-days"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Last-10-days
+                      6-more...
                     </label>
                   </div>
                 </div>
 
                 <div className="">
                   <CardTitle className="text-xl pb-4">Salary range</CardTitle>
-                  <Slider
-                    defaultValue={[50]}
-                    max={100}
-                    step={1}
+                  <DualRangeSlider
+                    value={range}
                     onValueChange={(value) => setRange(value)}
+                    min={0}
+                    max={100}
+                    step={5}
                   />
                   <div className="pt-2 text-md">
-                    Salary range:{" "}
-                    {`0 to ${(range[0] * 1000000).toLocaleString("vi-VN", {
+                    Salary range: <br />{" "}
+                    {` ${(range[0] * 1000000).toLocaleString("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    })} to ${(range[1] * 1000000).toLocaleString("vi-VN", {
                       style: "currency",
                       currency: "VND",
                     })}`}
@@ -281,14 +269,14 @@ export default function JobSearch() {
         <section className="flex flex-col">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-semibold">39, 782 Jobs found</h4>
+              <h4 className="font-semibold">{`${jobs.length} Job(s) found`}</h4>
             </div>
             <div>
               <Select>
                 <SelectTrigger>
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent align="end">
                   <SelectItem value="newest">Newest</SelectItem>
                   <SelectItem value="oldest">Oldest</SelectItem>
                   <SelectItem value="salary">Salary</SelectItem>
@@ -299,8 +287,8 @@ export default function JobSearch() {
 
           <div className="pt-8">
             <div className="space-y-4">
-              {jobs.map((job, index) => (
-                <JobItem key={index} {...job} />
+              {jobs.map((job) => (
+                <JobItem key={job.id} {...job} />
               ))}
             </div>
           </div>

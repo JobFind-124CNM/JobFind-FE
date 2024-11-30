@@ -1,3 +1,4 @@
+import { Company } from "@/models/company.interface";
 import { Role } from "@/models/role.interface";
 
 export interface User {
@@ -14,4 +15,5 @@ export interface User {
     created_at: string;
     updated_at: string;
     is_deleted?: boolean;
+    company?: Company;
 }
