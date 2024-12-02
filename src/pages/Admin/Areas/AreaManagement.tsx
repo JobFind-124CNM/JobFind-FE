@@ -105,7 +105,9 @@ export default function AreaManagement() {
     try {
       const response = await api.put(`areas/${editingArea.id}`, editingArea);
       setAreas(
-        areas.map((area) => (area.id === editingArea.id ? response.data.data : area))
+        areas.map((area) =>
+          area.id === editingArea.id ? response.data.data : area
+        )
       );
       setIsEditDialogOpen(false);
       setEditingArea(null);
@@ -217,7 +219,9 @@ export default function AreaManagement() {
                   </TableCell>
                   <TableCell>{area.name}</TableCell>
                   <TableCell>
-                    {format(area.created_at, "dd/MM/yyyy HH:mm")}
+                    {area.created_at
+                      ? format(new Date(area.created_at), "dd/MM/yyyy HH:mm")
+                      : "N/A"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button

@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, CircleDollarSign, MapPin } from "lucide-react";
+import { Building2, Calendar, CircleDollarSign, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Post } from "@/models/post.interface";
 import { Link } from "react-router-dom";
 import { formatCurrency } from "@/utils/utils";
+import { formatDate } from "date-fns";
 
 const getBadgeColor = (type: Post["form_of_work"]) => {
   switch (type.name) {
@@ -52,6 +53,12 @@ export default function JobItem(data: Post) {
           <div className="flex items-center gap-2">
             <CircleDollarSign className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{formatCurrency(data.salary)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">
+              {formatDate(data.created_at, "yyyy-MM-dd")}
+            </span>
           </div>
         </div>
       </div>

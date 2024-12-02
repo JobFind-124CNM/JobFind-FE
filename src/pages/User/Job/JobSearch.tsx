@@ -1,4 +1,5 @@
 import JobItem from "@/components/Job/JobItem";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,9 +20,16 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Area } from "@/models/area.interface";
 import { Category } from "@/models/category.interface";
+import { FormOfWork } from "@/models/form-of-work.interface";
 import { Post } from "@/models/post.interface";
 import api from "@/utils/api";
-import { ListFilter } from "lucide-react";
+import {
+  ListFilter,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Search,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -31,9 +39,15 @@ export default function JobSearch() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [range, setRange] = useState([0, 100]);
+  const [formOfWorkIds, setFormOfWorkIds] = useState<string[]>([]);
+  const [postedWithin, setPostedWithin] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
+  const [formOfWorks, setFormOfWorks] = useState<FormOfWork[]>([]);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -43,56 +57,93 @@ export default function JobSearch() {
     const query = params.get("q") || "";
     const category = params.get("category_id") || "";
     const area = params.get("area_id") || "";
+    const formOfWorkIdsParam = params.get("form_of_work_ids") || "";
+    const postedWithinParam = params.get("posted_within") || "";
+    const salaryMin = params.get("salary_min") || "0";
+    const salaryMax = params.get("salary_max") || "100";
+    const page = params.get("p") || "1";
 
     setSearchQuery(query);
     setSelectedCategory(category);
     setLocationFilter(area);
+    setFormOfWorkIds(formOfWorkIdsParam ? formOfWorkIdsParam.split(",") : []);
+    setPostedWithin(postedWithinParam ? postedWithinParam.split(",") : []);
+    setRange([parseInt(salaryMin), parseInt(salaryMax)]);
+    setCurrentPage(parseInt(page));
 
-    fetchJobs(query, +category, +area);
-
-    getCategories();
-    getLocations();
+    fetchJobs(
+      query,
+      +category,
+      +area,
+      formOfWorkIdsParam,
+      postedWithinParam,
+      salaryMin,
+      salaryMax,
+      parseInt(page)
+    );
   }, [location.search]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [formOfWorksRes, categoriesRes, areasRes] = await Promise.all([
+          api.get("form-of-works"),
+          api.get("categories"),
+          api.get("areas"),
+        ]);
+
+        setFormOfWorks(formOfWorksRes.data.data);
+        setCategories(categoriesRes.data.data);
+        setAreas(areasRes.data.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const fetchJobs = async (
     query: string,
     category: number,
-    location: number
+    location: number,
+    formOfWorkIdsParam: string,
+    postedWithinParam: string,
+    salaryMin: string,
+    salaryMax: string,
+    page: number
   ) => {
+    setLoading(true);
     try {
       const response = await api.get("/posts", {
         params: {
           q: query,
           category_id: category,
           area_id: location,
+          form_of_work_ids: formOfWorkIdsParam
+            ? formOfWorkIdsParam.split(",")
+            : undefined,
+          posted_within: postedWithinParam
+            ? postedWithinParam.split(",")
+            : undefined,
+          salary_min: parseInt(salaryMin) * 1000000,
+          salary_max: parseInt(salaryMax) * 1000000,
+          p: page,
         },
       });
       setJobs(response.data.data);
+      setTotalPages(response.data.pagination.last_page);
     } catch (error) {
       console.error("Error fetching jobs:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getCategories = async () => {
-    const response = await api.get("/categories");
-
-    if (response.status === 200) {
-      setCategories(response.data.data);
-    }
-  };
-
-  const getLocations = async () => {
-    const response = await api.get("/areas");
-
-    if (response.status === 200) {
-      setAreas(response.data.data);
-    }
-  };
-
-  const handleSearch = () => {
+  const handleSearch = (page = 1) => {
     const queryParams = new URLSearchParams();
     if (searchQuery.trim()) {
-      queryParams.append("s", searchQuery);
+      queryParams.append("q", searchQuery);
     }
     if (selectedCategory) {
       queryParams.append("category_id", selectedCategory);
@@ -100,7 +151,24 @@ export default function JobSearch() {
     if (locationFilter) {
       queryParams.append("area_id", locationFilter);
     }
+    if (formOfWorkIds.length > 0) {
+      queryParams.append("form_of_work_ids", formOfWorkIds.join(","));
+    }
+    if (postedWithin.length > 0) {
+      queryParams.append("posted_within", postedWithin.join(","));
+    }
+    queryParams.append("salary_min", range[0].toString());
+    queryParams.append("salary_max", range[1].toString());
+    queryParams.append("p", page.toString());
+
+    console.log(queryParams.toString());
+
     navigate(`/jobs?${queryParams.toString()}`);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    handleSearch(page);
   };
 
   return (
@@ -116,6 +184,12 @@ export default function JobSearch() {
                 <CardDescription>
                   Filter the most suitable job for you
                 </CardDescription>
+                <div className="pt-4">
+                  <Button onClick={() => handleSearch()}>
+                    {" "}
+                    <Search /> Search
+                  </Button>
+                </div>
               </CardHeader>
 
               <Separator className="my-2" />
@@ -132,11 +206,15 @@ export default function JobSearch() {
                 </div>
                 <div className="pb-6">
                   <CardTitle className="text-xl pb-4">Job Category</CardTitle>
-                  <Select onValueChange={(value) => setSelectedCategory(value)}>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={(value) => setSelectedCategory(value)}
+                  >
                     <SelectTrigger value={selectedCategory}>
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="0">All</SelectItem>
                       {categories.map((category) => (
                         <SelectItem
                           key={category.id}
@@ -151,34 +229,36 @@ export default function JobSearch() {
 
                 <div className="pb-6">
                   <CardTitle className="text-xl pb-4">Job Type</CardTitle>
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="full-time" />
-                    <label
-                      htmlFor="full-time"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  {formOfWorks.map((formOfWork) => (
+                    <div
+                      className="pb-4 flex items-center gap-2"
+                      key={formOfWork.id}
                     >
-                      Full time
-                    </label>
-                  </div>
-
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="part-time" />
-                    <label
-                      htmlFor="part-time"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Part time
-                    </label>
-                  </div>
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="remote" />
-                    <label
-                      htmlFor="remote"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Remote
-                    </label>
-                  </div>
+                      <Checkbox
+                        checked={formOfWorkIds.includes(
+                          formOfWork.id.toString()
+                        )}
+                        className="w-6 h-6"
+                        id={`type-${formOfWork.id.toString()}`}
+                        value={formOfWork.id}
+                        onCheckedChange={(checked) => {
+                          setFormOfWorkIds((prev) =>
+                            checked
+                              ? [...prev, formOfWork.id.toString()]
+                              : prev.filter(
+                                  (id) => id !== formOfWork.id.toString()
+                                )
+                          );
+                        }}
+                      />
+                      <label
+                        htmlFor={`type-${formOfWork.id.toString()}`}
+                        className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {formOfWork.name}
+                      </label>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="pb-6">
@@ -191,6 +271,7 @@ export default function JobSearch() {
                       <SelectValue placeholder="Location" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="0">All</SelectItem>
                       {areas.map((area) => (
                         <SelectItem key={area.id} value={area.id.toString()}>
                           {area.name}
@@ -201,44 +282,38 @@ export default function JobSearch() {
                 </div>
 
                 <div className="pb-6">
-                  <CardTitle className="text-xl pb-4">Experience</CardTitle>
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="no-experience" />
-                    <label
-                      htmlFor="no-experience"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      No experience
-                    </label>
-                  </div>
+                  <CardTitle className="text-xl pb-4">Posted within</CardTitle>
 
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="1-2" />
-                    <label
-                      htmlFor="1-2"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  {[
+                    { id: "today", label: "Today" },
+                    { id: "1-2", label: "Last 2 days" },
+                    { id: "3-7", label: "Last 7 days" },
+                    { id: "1-month", label: "Last 1 month" },
+                  ].map((option) => (
+                    <div
+                      className="pb-4 flex items-center gap-2"
+                      key={option.id}
                     >
-                      1-2 years
-                    </label>
-                  </div>
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="3-6" />
-                    <label
-                      htmlFor="3-6"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      3-6 years
-                    </label>
-                  </div>
-                  <div className="pb-4 flex items-center gap-2">
-                    <Checkbox className="w-6 h-6" id="6+" />
-                    <label
-                      htmlFor="6+"
-                      className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      6-more...
-                    </label>
-                  </div>
+                      <Checkbox
+                        className="w-6 h-6"
+                        id={option.id}
+                        checked={postedWithin.includes(option.id)}
+                        onCheckedChange={(checked) => {
+                          setPostedWithin((prev) =>
+                            checked
+                              ? [...prev, option.id]
+                              : prev.filter((item) => item !== option.id)
+                          );
+                        }}
+                      />
+                      <label
+                        htmlFor={option.id}
+                        className="text-md font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {option.label}
+                      </label>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="">
@@ -285,12 +360,61 @@ export default function JobSearch() {
             </div>
           </div>
 
-          <div className="pt-8">
-            <div className="space-y-4">
-              {jobs.map((job) => (
-                <JobItem key={job.id} {...job} />
-              ))}
+          {jobs.length === 0 && (
+            <div className="text-center text-gray-500">
+              Không tìm thấy công việc phù hợp.
             </div>
+          )}
+
+          <div className="pt-8">
+            {loading ? (
+              <div className="flex justify-center items-center">
+                <Loader2 className="animate-spin h-8 w-8 text-gray-500" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {jobs.map((job) => (
+                  <JobItem key={job.id} {...job} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-center gap-2 mt-8">
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft />
+            </Button>
+
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (page) => (
+                <Button
+                  variant="outline"
+                  key={page}
+                  className={`${
+                    currentPage === page
+                      ? "bg-primary text-white hover:bg-primary/90 hover:text-white"
+                      : ""
+                  }`}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </Button>
+              )
+            )}
+
+            <Button
+              variant="outline"
+              onClick={() =>
+                handlePageChange(Math.min(currentPage + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight />
+            </Button>
           </div>
         </section>
       </div>

@@ -34,11 +34,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight, Edit, Trash } from "lucide-react";
+import {
+  BuildingIcon,
+  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  GlobeIcon,
+  HashIcon,
+  Trash,
+} from "lucide-react";
 import api from "@/utils/api";
 import { Company } from "@/models/company.interface";
 import { format } from "date-fns";
 import { PaginationInfo } from "@/models/PaginationInfo.interface";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function CompanyManagement() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -119,8 +129,11 @@ export default function CompanyManagement() {
           <TableHeader>
             <TableRow>
               <TableHead>No.</TableHead>
+              <TableHead>Logo</TableHead>
               <TableHead>Company name</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Tax number</TableHead>
               <TableHead>Created at</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -133,8 +146,17 @@ export default function CompanyManagement() {
                   <TableCell>
                     {pagination ? pagination.from + index : index + 1}
                   </TableCell>
+                  <TableCell>
+                    <img
+                      src={company.logo}
+                      alt={company.name}
+                      className="w-12 h-12 object-contain rounded-lg"
+                    />
+                  </TableCell>
                   <TableCell>{company.name}</TableCell>
-                  <TableCell>{company.description}</TableCell>{" "}
+                  <TableCell>{company.email}</TableCell>
+                  <TableCell>{company.phone}</TableCell>
+                  <TableCell>{company.tax_number}</TableCell>
                   <TableCell>
                     {format(company.created_at, "dd/MM/yyyy HH:mm")}
                   </TableCell>
@@ -274,108 +296,72 @@ export default function CompanyManagement() {
       </AlertDialog>
 
       <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
-        <DialogContent className="max-w-[900px] max-h-[100vh]">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Company</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">
+              Company Details
+            </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Company Name
-              </Label>
-              <TableCell className="w-[200px]">
-                {editingStatusCompany?.name}
-              </TableCell>{" "}
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="logo" className="text-right">
-                Logo
-              </Label>
+          <div className="grid gap-6 py-4">
+            <div className="flex items-center space-x-4">
               <img
                 src={editingStatusCompany?.logo}
-                alt="Logo"
-                className="w-16 h-16 object-contain"
-              />{" "}
+                alt={`${editingStatusCompany?.name} logo`}
+                className="w-20 h-20 object-contain rounded-lg border p-2"
+              />
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {editingStatusCompany?.name}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {editingStatusCompany?.description}
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <TableCell className="w-[400px]">
-                {editingStatusCompany?.description}
-              </TableCell>{" "}
-            </div>
+            <Card>
+              <CardContent className="grid gap-4 pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <GlobeIcon className="w-4 h-4 text-muted-foreground" />
+                    <a
+                      href={editingStatusCompany?.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm hover:underline"
+                    >
+                      {editingStatusCompany?.website}
+                    </a>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <BuildingIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {editingStatusCompany?.amount_of_employee} employees
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <HashIcon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      Tax Number: {editingStatusCompany?.tax_number}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="website" className="text-right">
-                Website
-              </Label>
-              <TableCell className="w-[400px]">
-                {editingStatusCompany?.website}
-              </TableCell>{" "}
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="amountOfEmployees" className="text-right">
-                Number of Employees
-              </Label>
-              <TableCell className="w-[400px]">
-                {editingStatusCompany?.amountOfEmployees}
-              </TableCell>{" "}
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="taxNumber" className="text-right">
-                Tax Number
-              </Label>
-              <TableCell className="w-[400px]">
-                {editingStatusCompany?.taxNumber}
-              </TableCell>{" "}
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="created_at" className="text-right">
-                Created At
-              </Label>
-              <TableCell className="w-[400px]">
-                {editingStatusCompany?.created_at
-                  ? format(
-                      new Date(editingStatusCompany.created_at),
-                      "dd/MM/yyyy HH:mm"
-                    )
-                  : "-"}
-              </TableCell>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="updated_at" className="text-right">
-                Updated At
-              </Label>
-              <TableCell className="w-[400px]">
-                {editingStatusCompany?.updated_at
-                  ? format(
-                      new Date(editingStatusCompany.updated_at),
-                      "dd/MM/yyyy HH:mm"
-                    )
-                  : "-"}
-              </TableCell>
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
+            <div className="grid gap-2">
+              <Label htmlFor="status" className="text-sm font-medium">
+                Company Status
               </Label>
               <Select
                 value={editingStatusCompany?.status}
-                onValueChange={(status: string) =>
+                onValueChange={(status: "Active" | "Inactive" | "Pending") =>
                   setEditingStatusCompany((prev) =>
                     prev ? { ...prev, status } : null
                   )
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger id="status" className="w-full">
                   <SelectValue>{editingStatusCompany?.status}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -385,6 +371,27 @@ export default function CompanyManagement() {
                 </SelectContent>
               </Select>
             </div>
+
+            <Card>
+              <CardContent className="grid gap-4 pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">
+                      Created At
+                    </Label>
+                    <p className="text-sm font-medium flex items-center mt-1">
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      {editingStatusCompany?.created_at
+                        ? format(
+                            new Date(editingStatusCompany.created_at),
+                            "dd/MM/yyyy HH:mm"
+                          )
+                        : "Invalid Date"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
           <DialogFooter>
             <Button

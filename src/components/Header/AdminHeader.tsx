@@ -13,10 +13,11 @@ import {
   DropdownMenuGroup,
   DropdownMenuSeparator,
 } from "@radix-ui/react-dropdown-menu";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/userSlice";
 import { useNavigate } from "react-router-dom";
 import api from "@/utils/api";
+import { RootState } from "@/store/store";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -24,15 +25,14 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick }: HeaderProps) {
   const dispatch = useDispatch();
+  const currentUser = useSelector((state: RootState) => state.user.user);
   const navigate = useNavigate();
 
   const handleLogout = () => {
     const accessToken = localStorage.getItem("access_token");
 
     api
-      .get("/auth/logout", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
+      .get("/auth/logout")
       .then(() => {
         localStorage.removeItem("access_token");
         dispatch(logout());
@@ -67,8 +67,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatar.png" alt="Admin" />
-                  <AvatarFallback>AD</AvatarFallback>
+                  <AvatarImage
+                    src={currentUser?.avatar || "/default_avatar.png"}
+                    alt="Admin"
+                  />
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>

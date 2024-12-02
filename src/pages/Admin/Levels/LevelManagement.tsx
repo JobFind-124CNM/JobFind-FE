@@ -45,6 +45,7 @@ import {
   Search,
   ChevronRight,
   ChevronLeft,
+  Loader2,
 } from "lucide-react";
 import api from "@/utils/api";
 import { Level } from "@/models/level.interface";
@@ -63,6 +64,7 @@ export default function LevelManagement() {
   const [newLevel, setNewLevel] = useState({ name: "" });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingLevel, setDeletingLevel] = useState<Level | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getLevels();
@@ -70,11 +72,14 @@ export default function LevelManagement() {
 
   const getLevels = async (page = 1, size = 5, search = "") => {
     try {
+      setLoading(true);
       const response = await api.get(`levels?q=${search}&p=${page}&s=${size}`);
       setLevels(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching levels:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,7 +110,9 @@ export default function LevelManagement() {
     try {
       const response = await api.put(`levels/${editingLevel.id}`, editingLevel);
       setLevels(
-        levels.map((level) => (level.id === editingLevel.id ? response.data.data : level))
+        levels.map((level) =>
+          level.id === editingLevel.id ? response.data.data : level
+        )
       );
       setIsEditDialogOpen(false);
       setEditingLevel(null);
@@ -137,6 +144,26 @@ export default function LevelManagement() {
   const handlePageSizeChange = (size: number) => {
     getLevels(1, size);
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!levels) {
+    return (
+      <AdminLayout>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Post not found</h1>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -217,7 +244,9 @@ export default function LevelManagement() {
                   </TableCell>
                   <TableCell>{level.name}</TableCell>
                   <TableCell>
-                    {format(level.created_at, "dd/MM/yyyy HH:mm")}
+                    {level.created_at
+                      ? format(new Date(level.created_at), "dd/MM/yyyy HH:mm")
+                      : "N/A"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -362,7 +391,9 @@ export default function LevelManagement() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingLevel && handleDeleteLevel(deletingLevel.id)}
+              onClick={() =>
+                deletingLevel && handleDeleteLevel(deletingLevel.id)
+              }
             >
               Delete
             </AlertDialogAction>

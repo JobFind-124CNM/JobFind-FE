@@ -13,44 +13,31 @@ import {
   DropdownMenuShortcut,
 } from "@/components/ui/dropdown-menu";
 import { LogOut } from "lucide-react";
-import { User } from "@/models/user.interface";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "@/store/userSlice";
+import { RootState } from "@/store/store";
 import api from "@/utils/api";
-import { useDispatch } from "react-redux";
-import { logout, setUser } from "@/store/userSlice";
 import { Role } from "@/models/role.interface";
 
 export default function Header() {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User>();
-  const [isAdminOrHr, setIsAdminOrHr] = useState(false);
-
   const dispatch = useDispatch();
+  const currentUser = useSelector((state: RootState) => state.user.user);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!currentUser);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isUser, setIsUser] = useState(false);
+  const [isHr, setIsHr] = useState(false);
 
   useEffect(() => {
-    const accessToken = localStorage.getItem("access_token");
-    if (accessToken) {
+    if (currentUser) {
       setIsAuthenticated(true);
-      api
-        .get("/auth/me", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        .then((response) => {
-          const user: User = response.data.data;
-          setCurrentUser(user);
-          dispatch(setUser(user));
-
-          if (user.roles) {
-            checkRole(user.roles);
-          }
-        })
-        .catch((error) => {
-          console.error("Failed to fetch user data:", error);
-          setIsAuthenticated(false);
-          localStorage.removeItem("access_token");
-        });
+      if (currentUser.roles) {
+        checkRole(currentUser.roles);
+      }
+    } else {
+      setIsAuthenticated(false);
     }
-  }, [dispatch]);
+  }, [currentUser]);
 
   const handleLogin = () => {
     navigate("/auth/login");
@@ -63,8 +50,11 @@ export default function Header() {
   const checkRole = (roles: Role[]) => {
     const isAdmin = roles.some((role) => role.name.toUpperCase() === "ADMIN");
     const isHr = roles.some((role) => role.name.toUpperCase() === "HR");
+    const isUser = roles.some((role) => role.name.toUpperCase() === "USER");
 
-    setIsAdminOrHr(isAdmin || isHr);
+    setIsHr(isHr);
+    setIsUser(isUser);
+    setIsAdmin(isAdmin);
   };
 
   const handleLogout = () => {
@@ -78,7 +68,6 @@ export default function Header() {
         setIsAuthenticated(false);
 
         localStorage.removeItem("access_token");
-        setCurrentUser(undefined);
         dispatch(logout());
 
         navigate("/");
@@ -107,8 +96,11 @@ export default function Header() {
           <Link to="/jobs" className="text-sm font-medium hover:text-primary">
             Find a Jobs
           </Link>
-          <Link to="/about" className="text-sm font-medium hover:text-primary">
-            About
+          <Link
+            to="/companies"
+            className="text-sm font-medium hover:text-primary"
+          >
+            Companies List
           </Link>
           <Link to="/page" className="text-sm font-medium hover:text-primary">
             Page
@@ -142,32 +134,58 @@ export default function Header() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuGroup>
-                    {isAdminOrHr && (
+                    {isHr && (
                       <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => navigate("/admin/posts")}
+                        className="cursor-pointer font-semibold"
+                        onClick={() => navigate("/admin/hr/posts")}
                       >
                         Management
                       </DropdownMenuItem>
                     )}
+
+                    {isAdmin && (
+                      <DropdownMenuItem
+                        className="cursor-pointer font-semibold"
+                        onClick={() => navigate("/admin/dashboard")}
+                      >
+                        Management
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
                     <DropdownMenuItem
                       className="cursor-pointer"
                       onClick={() => navigate("/profile")}
                     >
                       Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onClick={() => navigate("/company-register")}
-                    >
-                      Company Register
-                    </DropdownMenuItem>
+
                     <DropdownMenuItem
                       className="cursor-pointer"
                       onClick={() => navigate("/applicaiton-history")}
                     >
                       Post Applied
                     </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    {isUser && (
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => navigate("/company-register")}
+                      >
+                        Company Register
+                      </DropdownMenuItem>
+                    )}
+                    {isHr && (
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => navigate("/my-company")}
+                      >
+                        My Company
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

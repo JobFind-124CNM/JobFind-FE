@@ -3,14 +3,19 @@ import AdminLayout from "@/components/Layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, FileText, Download } from "lucide-react";
-import { UserPost } from "@/models/user-post.interface";
 import { formatDate } from "date-fns";
+import { useState } from "react";
+import { UserApplied } from "@/models/user-applied.interface";
 
 export default function CandidateDetail() {
   const navigate = useNavigate();
   const location = useLocation();
-  const userPost = location.state?.userPost as UserPost;
-  console.log(userPost);
+  const userPost = location.state?.userPost as UserApplied;
+  const [cvLoading, setCvLoading] = useState(true);
+
+  const handleIframeLoad = () => {
+    setCvLoading(false);
+  };
 
   if (!userPost) {
     return (
@@ -90,12 +95,19 @@ export default function CandidateDetail() {
                   <h3 className="text-sm font-medium text-gray-500 pb-2">
                     Preview CV
                   </h3>
+                  {cvLoading && (
+                    <div className="flex items-center justify-center h-96">
+                      <Loader2 className="w-8 h-8 animate-spin" />
+                    </div>
+                  )}
                   <iframe
                     src={userPost.pivot.cv}
                     width="100%"
                     height="500"
                     frameBorder="0"
                     title="CV Preview"
+                    onLoad={handleIframeLoad}
+                    className={cvLoading ? "hidden" : ""}
                   />
                 </div>
               )}
