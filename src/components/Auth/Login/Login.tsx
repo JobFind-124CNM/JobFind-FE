@@ -6,8 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ToastContainer, showToast } from "@/utils/toastConfig";
 import api from "@/utils/api";
+import { useDispatch } from "react-redux";
+import { User } from "@/models/user.interface";
+import { setUser } from "@/store/userSlice";
 
 export default function Login() {
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -91,8 +95,22 @@ export default function Login() {
       const response = await api.post("/auth/login", formData);
 
       if (response.status === 200) {
-        localStorage.setItem("access_token", response.data.access_token);
+        const accessToken = response.data.access_token;
+        localStorage.setItem("access_token", accessToken);
         showToast("Login successful!", "success");
+
+        api
+          .get("/auth/me", {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+          .then((response) => {
+            const user: User = response.data.data;
+            dispatch(setUser(user));
+          })
+          .catch((error) => {
+            console.error("Failed to fetch user data:", error);
+            localStorage.removeItem("access_token");
+          });
 
         const from = location.state?.from?.pathname || "/";
 

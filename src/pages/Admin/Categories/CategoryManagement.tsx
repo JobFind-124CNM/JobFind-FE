@@ -60,9 +60,11 @@ export default function CategoryManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [newCategory, setNewCategory] = useState({ name: "",description: "" });
+  const [newCategory, setNewCategory] = useState({ name: "", description: "" });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(
+    null
+  );
 
   useEffect(() => {
     getCategories();
@@ -70,7 +72,9 @@ export default function CategoryManagement() {
 
   const getCategories = async (page = 1, size = 5, search = "") => {
     try {
-      const response = await api.get(`categories?q=${search}&p=${page}&s=${size}`);
+      const response = await api.get(
+        `categories?q=${search}&p=${page}&s=${size}`
+      );
       setCategories(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
@@ -93,7 +97,7 @@ export default function CategoryManagement() {
       const response = await api.post("/categories", newCategory);
       setCategories([...categories, response.data.data]);
       setIsAddDialogOpen(false);
-      setNewCategory({ name: "" , description: ""});
+      setNewCategory({ name: "", description: "" });
       getCategories(pagination?.current_page, pagination?.size);
     } catch (error) {
       console.error("Error adding category:", error);
@@ -103,9 +107,14 @@ export default function CategoryManagement() {
   const handleUpdateCategory = async () => {
     if (!editingCategory) return;
     try {
-      const response = await api.put(`categories/${editingCategory.id}`, editingCategory);
+      const response = await api.put(
+        `categories/${editingCategory.id}`,
+        editingCategory
+      );
       setCategories(
-        categories.map((category) => (category.id === editingCategory.id ? response.data.data : category))
+        categories.map((category) =>
+          category.id === editingCategory.id ? response.data.data : category
+        )
       );
       setIsEditDialogOpen(false);
       setEditingCategory(null);
@@ -190,7 +199,10 @@ export default function CategoryManagement() {
                     id="description"
                     value={newCategory.description}
                     onChange={(e) =>
-                      setNewCategory({ ...newCategory, description: e.target.value })
+                      setNewCategory({
+                        ...newCategory,
+                        description: e.target.value,
+                      })
                     }
                     className="col-span-3"
                   />
@@ -232,7 +244,12 @@ export default function CategoryManagement() {
                   <TableCell>{category.name}</TableCell>
                   <TableCell>{category.description}</TableCell>
                   <TableCell>
-                    {format(category.created_at, "dd/MM/yyyy HH:mm")}
+                    {category.created_at
+                      ? format(
+                          new Date(category.created_at),
+                          "dd/MM/yyyy HH:mm"
+                        )
+                      : "N/A"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -392,7 +409,9 @@ export default function CategoryManagement() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingCategory && handleDeleteCategory(deletingCategory.id)}
+              onClick={() =>
+                deletingCategory && handleDeleteCategory(deletingCategory.id)
+              }
             >
               Delete
             </AlertDialogAction>

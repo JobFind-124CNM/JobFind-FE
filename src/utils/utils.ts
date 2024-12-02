@@ -1,9 +1,11 @@
 export const formatCurrency = (value: string) => {
-    const numericValue = value.replace(/\D/g, "");
-    const number = parseInt(numericValue, 10);
+    const number = parseFloat(value);
     if (isNaN(number)) return "";
+
     return new Intl.NumberFormat("vi-VN", {
         style: "currency",
         currency: "VND",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     }).format(number);
 };

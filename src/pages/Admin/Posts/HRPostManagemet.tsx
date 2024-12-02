@@ -209,34 +209,9 @@ export default function PostManagement() {
               <Search />
             </Button>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus /> Add new
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Thêm tag mới</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Tên
-                  </Label>
-                  <Input
-                    id="name"
-                    value={newTag.name}
-                    onChange={(e) =>
-                      setNewTag({ ...newTag, name: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <Button onClick={handleAddTag}>Thêm</Button>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => navigate("create")}>
+            <Plus /> Add new
+          </Button>
         </div>
 
         <Table>
@@ -261,7 +236,11 @@ export default function PostManagement() {
                   <TableCell>
                     {pagination ? pagination.from + index : index + 1}
                   </TableCell>
-                  <TableCell>{post.company.name}</TableCell>
+                  <TableCell>
+                    {post.company.name.length > 20
+                      ? `${post.title.slice(0, 20)}...`
+                      : post.title}
+                  </TableCell>
                   <TableCell>
                     {post.title.length > 30
                       ? `${post.title.slice(0, 30)}...`

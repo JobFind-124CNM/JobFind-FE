@@ -7,6 +7,7 @@ import api from "@/utils/api";
 import { Post } from "@/models/post.interface";
 import { UserPost } from "@/models/user-post.interface";
 import AppliedUsersTable from "@/components/Tables/AppliedUsersTable";
+import PostPreview from "@/pages/Admin/Posts/PostPreview";
 
 export default function PostDetail() {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +62,9 @@ export default function PostDetail() {
     );
   }
 
+  const onBack = () => {
+    navigate("/admin/posts");
+  };
   return (
     <AdminLayout>
       <div className="space-y-6 bg-white p-6 rounded-lg">
@@ -69,13 +73,13 @@ export default function PostDetail() {
         <Tabs defaultValue="preview" className="w-full">
           <TabsList>
             <TabsTrigger value="preview">Preview</TabsTrigger>
-            <TabsTrigger value="edit">Edit Post</TabsTrigger>
+            <TabsTrigger value="edit">Applied</TabsTrigger>
           </TabsList>
           <TabsContent value="preview">
-            <AppliedUsersTable appliedUsers={appliedUsers} post={post} />
+            <PostPreview post={post} onCancel={onBack} />
           </TabsContent>
           <TabsContent value="edit">
-            {/* <PostForm post={post} onCancel={() => navigate(-1)} /> */}
+            <AppliedUsersTable appliedUsers={appliedUsers} post={post} />
           </TabsContent>
         </Tabs>
       </div>

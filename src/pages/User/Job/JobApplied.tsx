@@ -25,28 +25,45 @@ import {
   Calendar,
   Building2,
   Briefcase,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { UserPost } from "@/models/user-post.interface";
 import api from "@/utils/api";
 
 export default function JobApplicationHistory() {
   const [applications, setApplications] = useState<UserPost[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getApplications();
-  }, []);
+    getApplications(currentPage);
+  }, [currentPage]);
 
-  const getApplications = async () => {
-    const response = await api.get("/posts/applied", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-      },
-    });
+  const getApplications = async (page: number) => {
+    setLoading(true);
+    try {
+      const response = await api.get("/posts/applied", {
+        params: {
+          p: page,
+          s: 5,
+        },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
 
-    console.log(response.data.data);
+      console.log(response.data.data);
 
-    if (response.status === 200) {
-      setApplications(response.data.data);
+      if (response.status === 200) {
+        setApplications(response.data.data);
+        setTotalPages(response.data.pagination.last_page);
+      }
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,6 +140,10 @@ export default function JobApplicationHistory() {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
     <div className="max-w-[1320px] mx-auto px-6 py-24">
       <h1 className="text-3xl font-bold mb-6">Job Applied</h1>
@@ -181,7 +202,7 @@ export default function JobApplicationHistory() {
                   onClick={() => handleSort("post.company")}
                   className="font-bold"
                 >
-                  Comapany {renderSortIcon("post.company")}
+                  Company {renderSortIcon("post.company")}
                 </Button>
               </TableHead>
               <TableHead>
@@ -228,7 +249,7 @@ export default function JobApplicationHistory() {
                 <TableCell>
                   <Badge
                     className={`${getStatusColor(
-                      application.status
+                      application.status as UserPost["status"]
                     )} text-white`}
                   >
                     {application.status}
@@ -242,9 +263,46 @@ export default function JobApplicationHistory() {
 
       {filteredApplications.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          Không tìm thấy kết quả phù hợp.
+          Không tìm thấy công việc đã ứng tuyển.
         </div>
       )}
+
+      <div className="flex justify-center gap-2 mt-8">
+        <Button
+          variant="outline"
+          onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft />
+        </Button>
+
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+          (page) => (
+            <Button
+              variant="outline"
+              key={page}
+              className={`${
+                currentPage === page
+                  ? "bg-primary text-white hover:bg-primary/90 hover:text-white"
+                  : ""
+              }`}
+              onClick={() => handlePageChange(page)}
+            >
+              {page}
+            </Button>
+          )
+        )}
+
+        <Button
+          variant="outline"
+          onClick={() =>
+            handlePageChange(Math.min(currentPage + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight />
+        </Button>
+      </div>
     </div>
   );
 }

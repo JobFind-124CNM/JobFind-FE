@@ -13,11 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Post } from "@/models/post.interface";
-import { FileText } from "lucide-react";
+import { FileText, TagIcon, Loader2 } from "lucide-react";
 import api from "@/utils/api";
 import { format } from "date-fns";
 import { showToast, ToastContainer } from "@/utils/toastConfig";
 import { formatCurrency } from "@/utils/utils";
+import { Badge } from "@/components/ui/badge";
+import DOMPurify from "dompurify";
+import parse from "html-react-parser";
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +37,7 @@ export default function JobDetail() {
   }, [id]);
 
   const getPost = async () => {
+    setLoading(true);
     try {
       const response = await api.get(`/posts/${id}`);
       console.log("Post:", response.data.data);
@@ -41,6 +45,8 @@ export default function JobDetail() {
       setPost(response.data.data);
     } catch (error) {
       console.error("Error fetching post:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,6 +90,45 @@ export default function JobDetail() {
     }
   };
 
+  const sanitizeHtml = (content: string) => {
+    return DOMPurify.sanitize(content, {
+      ADD_TAGS: [
+        "ul",
+        "ol",
+        "li",
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "br",
+        "strong",
+        "em",
+        "a",
+      ],
+      ADD_ATTR: ["href", "target", "rel"],
+    });
+  };
+
+  const renderContent = (content: string) => {
+    const sanitizedContent = sanitizeHtml(content);
+    return (
+      <div className="prose prose-slate max-w-none">
+        {parse(sanitizedContent)}
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="animate-spin h-8 w-8 text-gray-500" />
+      </div>
+    );
+  }
+
   if (!post) {
     return <div>Loading...</div>;
   }
@@ -113,42 +158,37 @@ export default function JobDetail() {
             </div>
           </div>
 
-          <div className="mb-8">
+          <div className="">
             <h2 className="text-xl font-semibold mb-4">Job Description</h2>
-            <div
-              className="text-gray-600"
-              dangerouslySetInnerHTML={{ __html: post.description }}
-            />
+            <div className="text-gray-600">
+              {renderContent(post.description)}
+            </div>
           </div>
 
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">
               Required Knowledge, Skills, and Abilities
             </h2>
-            <div
-              className="text-gray-600"
-              dangerouslySetInnerHTML={{ __html: post.qualification }}
-            />
+            <div>{renderContent(post.qualification)}</div>
           </div>
 
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Benefits</h2>
-            <div
-              className="text-gray-600"
-              dangerouslySetInnerHTML={{ __html: post.benefit }}
-            />
+            <div>{renderContent(post.benefit)}</div>
           </div>
 
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Technology</h2>
             <div className="flex flex-wrap gap-2">
               {post.tags?.map((tag) => (
-                <span
+                <Badge
                   key={tag.id}
-                  className="px-2 py-1 bg-gray-100 text-sm rounded-lg"
+                  variant="default"
+                  className="flex items-center"
                 >
+                  <TagIcon className="w-3 h-3 mr-1" />
                   {tag.name}
-                </span>
+                </Badge>
               ))}
             </div>
           </div>
@@ -189,9 +229,12 @@ export default function JobDetail() {
               <div className="mt-4">
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="default" className="w-full">
-                      Apply Now
-                    </Button>
+                    {post.status === "published" &&
+                      new Date(post.due_at) >= new Date() && (
+                        <Button variant="default" className="w-full">
+                          Apply Now
+                        </Button>
+                      )}
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[600px] h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -305,13 +348,10 @@ export default function JobDetail() {
                   {post.company.name}
                 </h3>
               </Link>
-              <p className="text-gray-600 mb-4">{post.company.description}</p>
+              <p className="text-gray-600 mb-4">
+                {renderContent(post.company.description)}
+              </p>
               <div className="space-y-2">
-                <div className="flex gap-2">
-                  <span className="text-gray-600">Name:</span>
-
-                  <span>{post.company.name}</span>
-                </div>
                 <div className="flex gap-2">
                   <span className="text-gray-600">Web:</span>
                   <a

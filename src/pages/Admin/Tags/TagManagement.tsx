@@ -45,6 +45,7 @@ import {
   Search,
   ChevronRight,
   ChevronLeft,
+  Loader2,
 } from "lucide-react";
 import api from "@/utils/api";
 import { Tag } from "@/models/tag.interface";
@@ -63,6 +64,7 @@ export default function TagManagement() {
   const [newTag, setNewTag] = useState({ name: "" });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingTag, setDeletingTag] = useState<Tag | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getTags();
@@ -70,11 +72,14 @@ export default function TagManagement() {
 
   const getTags = async (page = 1, size = 5, search = "") => {
     try {
+      setLoading(true);
       const response = await api.get(`tags?q=${search}&p=${page}&s=${size}`);
       setTags(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching tags:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -137,6 +142,26 @@ export default function TagManagement() {
   const handlePageSizeChange = (size: number) => {
     getTags(1, size);
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!tags) {
+    return (
+      <AdminLayout>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Post not found</h1>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
