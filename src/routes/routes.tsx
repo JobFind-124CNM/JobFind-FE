@@ -23,6 +23,14 @@ import LevelManagement from "@/pages/Admin/Levels/LevelManagement";
 import AreaManagement from "@/pages/Admin/Areas/AreaManagement";
 import CategoryManagement from "@/pages/Admin/Categories/CategoryManagement";
 import FormOfWorkManagement from "@/pages/Admin/FormOfWorks/FormOfWorkManagement";
+import Forbidden from "@/pages/Forbidden";
+import MyCompany from "@/pages/User/Company/MyCompany";
+import PendingCompanyManagement from "@/pages/Admin/Dashboard/VerifyCompany";
+import AdminPostManagement from "@/pages/Admin/Posts/AdminPostManagement";
+import HRMyCompany from "@/pages/Admin/Companies/MyCompany";
+import CompanyDetail from "@/pages/User/Company/CompanyDetail";
+import PositionManagement from "@/pages/Admin/Positions/PositionManagement";
+import CompanyList from "@/pages/User/Company/ListCompany";
 
 const routers = createBrowserRouter([
   {
@@ -30,14 +38,16 @@ const routers = createBrowserRouter([
     element: <MainLayout />,
     children: [
       {
-        element: <AuthGuard />,
         children: [
           { path: "/", element: <App /> },
           { path: "posts/:id", element: <JobDetail /> },
           { path: "/profile", element: <Profile /> },
           { path: "/applicaiton-history", element: <JobApplicationHistory /> },
           { path: "/company-register", element: <CompanyRegister /> },
+          { path: "/my-company", element: <MyCompany /> },
           { path: "/jobs", element: <JobSearch /> },
+          { path: "/company/:id", element: <CompanyDetail /> },
+          { path: "/companies", element: <CompanyList /> },
         ],
       },
     ],
@@ -58,13 +68,22 @@ const routers = createBrowserRouter([
     path: "/admin",
     element: <AuthGuard />,
     children: [
+      { path: "dashboard", element: <PendingCompanyManagement /> },
       { path: "tags", element: <TagManagement /> },
+      { path: "positions", element: <PositionManagement /> },
       { path: "roles", element: <RoleManagement /> },
       { path: "users", element: <UserManagement /> },
       {
+        path: "hr",
+        children: [
+          { path: "posts", element: <PostManagement /> },
+          { path: "my-company", element: <HRMyCompany /> },
+        ],
+      },
+      {
         path: "posts",
         children: [
-          { path: "", element: <PostManagement /> },
+          { path: "", element: <AdminPostManagement /> },
           {
             path: ":id",
             element: <PostDetail />,
@@ -82,6 +101,10 @@ const routers = createBrowserRouter([
       { path: "categories", element: <CategoryManagement /> },
       { path: "form-of-works", element: <FormOfWorkManagement /> },
     ],
+  },
+  {
+    path: "/forbidden",
+    element: <Forbidden />,
   },
 ]);
 

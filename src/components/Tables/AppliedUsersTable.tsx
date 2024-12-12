@@ -45,16 +45,18 @@ export default function AppliedUsersTable({
     setCurrentPage(1);
   };
 
-  const filteredUsers = appliedUsers.filter((user) =>
-    user.user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = appliedUsers
+    .filter((user) => user.pivot.status === "Applied")
+    .filter((user) =>
+      user.user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  if (!appliedUsers || appliedUsers.length === 0) {
+  if (!filteredUsers || filteredUsers.length === 0) {
     return (
       <div className="text-center text-gray-500">
         No users have applied to this post yet.

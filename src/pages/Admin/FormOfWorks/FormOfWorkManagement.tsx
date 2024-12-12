@@ -59,10 +59,16 @@ export default function FormOfWorkManagement() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingFormOfWork, setEditingFormOfWork] = useState<FormOfWork | null>(null);
-  const [newFormOfWork, setNewFormOfWork] = useState({ name: "", description: "" });
+  const [editingFormOfWork, setEditingFormOfWork] = useState<FormOfWork | null>(
+    null
+  );
+  const [newFormOfWork, setNewFormOfWork] = useState({
+    name: "",
+    description: "",
+  });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deletingFormOfWork, setDeletingFormOfWork] = useState<FormOfWork | null>(null);
+  const [deletingFormOfWork, setDeletingFormOfWork] =
+    useState<FormOfWork | null>(null);
 
   useEffect(() => {
     getFormOfWorks();
@@ -70,7 +76,9 @@ export default function FormOfWorkManagement() {
 
   const getFormOfWorks = async (page = 1, size = 5, search = "") => {
     try {
-      const response = await api.get(`form-of-works?q=${search}&p=${page}&s=${size}`);
+      const response = await api.get(
+        `form-of-works?q=${search}&p=${page}&s=${size}`
+      );
       setFormOfWorks(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
@@ -93,7 +101,7 @@ export default function FormOfWorkManagement() {
       const response = await api.post("/form-of-works", newFormOfWork);
       setFormOfWorks([...formOfworks, response.data.data]);
       setIsAddDialogOpen(false);
-      setNewFormOfWork({ name: "" , description: ""});
+      setNewFormOfWork({ name: "", description: "" });
       getFormOfWorks(pagination?.current_page, pagination?.size);
     } catch (error) {
       console.error("Error adding formOfwork:", error);
@@ -103,9 +111,16 @@ export default function FormOfWorkManagement() {
   const handleUpdateFormOfWork = async () => {
     if (!editingFormOfWork) return;
     try {
-      const response = await api.put(`form-of-works/${editingFormOfWork.id}`, editingFormOfWork);
+      const response = await api.put(
+        `form-of-works/${editingFormOfWork.id}`,
+        editingFormOfWork
+      );
       setFormOfWorks(
-        formOfworks.map((formOfwork) => (formOfwork.id === editingFormOfWork.id ? response.data.data : formOfwork))
+        formOfworks.map((formOfwork) =>
+          formOfwork.id === editingFormOfWork.id
+            ? response.data.data
+            : formOfwork
+        )
       );
       setIsEditDialogOpen(false);
       setEditingFormOfWork(null);
@@ -118,7 +133,9 @@ export default function FormOfWorkManagement() {
   const handleDeleteFormOfWork = async (id: number) => {
     try {
       await api.delete(`form-of-works/${id}`);
-      setFormOfWorks(formOfworks.filter((formOfworks) => formOfworks.id !== id));
+      setFormOfWorks(
+        formOfworks.filter((formOfworks) => formOfworks.id !== id)
+      );
       setIsDeleteDialogOpen(false);
       getFormOfWorks(pagination?.current_page, pagination?.size);
     } catch (error) {
@@ -177,7 +194,10 @@ export default function FormOfWorkManagement() {
                     id="name"
                     value={newFormOfWork.name}
                     onChange={(e) =>
-                      setNewFormOfWork({ ...newFormOfWork, name: e.target.value })
+                      setNewFormOfWork({
+                        ...newFormOfWork,
+                        name: e.target.value,
+                      })
                     }
                     className="col-span-3"
                   />
@@ -190,7 +210,10 @@ export default function FormOfWorkManagement() {
                     id="description"
                     value={newFormOfWork.description}
                     onChange={(e) =>
-                      setNewFormOfWork({ ...newFormOfWork, description: e.target.value })
+                      setNewFormOfWork({
+                        ...newFormOfWork,
+                        description: e.target.value,
+                      })
                     }
                     className="col-span-3"
                   />
@@ -232,7 +255,12 @@ export default function FormOfWorkManagement() {
                   <TableCell>{formOfwork.name}</TableCell>
                   <TableCell>{formOfwork.description}</TableCell>
                   <TableCell>
-                    {format(formOfwork.created_at, "dd/MM/yyyy HH:mm")}
+                    {formOfwork.created_at
+                      ? format(
+                          new Date(formOfwork.created_at),
+                          "dd/MM/yyyy HH:mm"
+                        )
+                      : "N/A"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -392,7 +420,10 @@ export default function FormOfWorkManagement() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingFormOfWork && handleDeleteFormOfWork(deletingFormOfWork.id)}
+              onClick={() =>
+                deletingFormOfWork &&
+                handleDeleteFormOfWork(deletingFormOfWork.id)
+              }
             >
               Delete
             </AlertDialogAction>

@@ -5,12 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { showToast, ToastContainer } from "@/utils/toastConfig";
 import api from "@/utils/api";
+import { User } from "@/models/user.interface";
+import { useDispatch } from "react-redux";
+import { setUser } from "@/store/userSlice";
 
 const SocialCallback: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { loginType } = useParams<{ loginType: string }>(); // Lấy loginType từ URL
+  const { loginType } = useParams<{ loginType: string }>();
+
+  const dispatch = useDispatch();
 
   const handleSocialCallback = async () => {
     setLoading(true);
@@ -39,7 +44,21 @@ const SocialCallback: React.FC = () => {
         }
       );
 
-      localStorage.setItem("access_token", userInfo.data.access_token);
+      const accessToken = userInfo.data.access_token;
+
+      localStorage.setItem("access_token", accessToken);
+      api
+        .get("/auth/me", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        .then((response) => {
+          const user: User = response.data.data;
+          dispatch(setUser(user));
+        })
+        .catch((error) => {
+          console.error("Failed to fetch user data:", error);
+          localStorage.removeItem("access_token");
+        });
       showToast("Login successful!", "success");
       navigate("/");
     } catch (error) {

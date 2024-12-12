@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ImageIcon, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, ImageIcon, Loader2, FileText, Save } from "lucide-react";
 import "react-quill/dist/quill.snow.css";
 import ReactQuill from "react-quill";
 import { Link } from "react-router-dom";
@@ -16,18 +16,16 @@ interface FileWithPreview extends File {
   preview?: string;
 }
 
-export default function CompanyRegister() {
-  const [company, setCompany] = useState<Partial<Company>>({
-    name: "",
-    description: "",
-    website: "",
-    amount_of_employee: 0,
-    tax_number: "",
-    status: "active",
-    address: "",
-    phone: "",
-    email: "",
-  });
+interface UpdateMyCompanyProp {
+  company: Company;
+  handleUpdate: (company: FormData) => Promise<void>;
+}
+
+export default function UpdateMyCompany({
+  company,
+  handleUpdate,
+}: UpdateMyCompanyProp) {
+  const [updateCompany, setUpdateCompany] = useState<Partial<Company>>(company);
 
   const [files, setFiles] = useState<{
     logo?: FileWithPreview;
@@ -39,7 +37,7 @@ export default function CompanyRegister() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setCompany((prev) => ({ ...prev, [name]: value }));
+    setUpdateCompany((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (
@@ -56,7 +54,7 @@ export default function CompanyRegister() {
   };
 
   const handleDescriptionChange = (content: string) => {
-    setCompany((prev) => ({ ...prev, description: content }));
+    setUpdateCompany((prev) => ({ ...prev, description: content }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,17 +62,18 @@ export default function CompanyRegister() {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("name", company.name || "");
-      formData.append("description", company.description || "");
-      formData.append("website", company.website || "");
+      formData.append("id", updateCompany.id?.toString() || "0");
+      formData.append("name", updateCompany.name || "");
+      formData.append("description", updateCompany.description || "");
+      formData.append("website", updateCompany.website || "");
       formData.append(
         "amountOfEmployees",
-        company.amount_of_employee?.toString() || "0"
+        updateCompany.amount_of_employee?.toString() || "0"
       );
-      formData.append("tax_number", company.tax_number || "");
-      formData.append("address", company.address || "");
-      formData.append("phone", company.phone || "");
-      formData.append("email", company.email || "");
+      formData.append("tax_number", updateCompany.tax_number || "");
+      formData.append("address", updateCompany.address || "");
+      formData.append("phone", updateCompany.phone || "");
+      formData.append("email", updateCompany.email || "");
 
       if (files.logo) {
         formData.append("logo", files.logo);
@@ -86,19 +85,11 @@ export default function CompanyRegister() {
         formData.append("contract", files.contract);
       }
 
+      console.log(updateCompany);
+
       console.log("formData", formData);
 
-      const response = await api.post("/companies", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      if (response.status === 201) {
-        showToast("Company registered successfully", "success");
-      } else {
-        showToast("Failed to register company", "error");
-      }
+      handleUpdate(formData);
     } catch (error) {
       console.error("Error submitting form:", error);
       showToast("Failed to register company", "error");
@@ -108,7 +99,7 @@ export default function CompanyRegister() {
   };
 
   return (
-    <div className="max-w-[1320px] mx-auto px-6 py-24">
+    <>
       <div className="">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/companies" className="text-gray-500 hover:text-gray-700">
@@ -137,7 +128,7 @@ export default function CompanyRegister() {
                     <Input
                       id="name"
                       name="name"
-                      value={company.name}
+                      value={updateCompany.name}
                       onChange={handleInputChange}
                       required
                     />
@@ -148,7 +139,7 @@ export default function CompanyRegister() {
                       <Input
                         id="email"
                         name="email"
-                        value={company.email}
+                        value={updateCompany.email}
                         onChange={handleInputChange}
                         required
                       />
@@ -158,7 +149,7 @@ export default function CompanyRegister() {
                       <Input
                         id="taxNumber"
                         name="taxNumber"
-                        value={company.tax_number}
+                        value={updateCompany.tax_number}
                         onChange={handleInputChange}
                         required
                       />
@@ -170,7 +161,7 @@ export default function CompanyRegister() {
                       id="address"
                       name="address"
                       placeholder="Nhập địa chỉ công ty"
-                      value={company.address}
+                      value={updateCompany.address}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -195,6 +186,10 @@ export default function CompanyRegister() {
                           <ImageIcon className="h-8 w-8 text-gray-400" />
                         )}
                       </div>
+
+                      <div className="h-20 w-20">
+                        <img src={updateCompany.logo} alt="" />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -214,7 +209,7 @@ export default function CompanyRegister() {
                         name="phone"
                         type="tel"
                         placeholder="Nhập số điện thoại"
-                        value={company.phone}
+                        value={updateCompany.phone}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -224,7 +219,7 @@ export default function CompanyRegister() {
                         id="amountOfEmployees"
                         name="amountOfEmployees"
                         type="number"
-                        value={company.amount_of_employee}
+                        value={updateCompany.amount_of_employee}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -235,7 +230,7 @@ export default function CompanyRegister() {
                       id="website"
                       name="website"
                       type="url"
-                      value={company.website}
+                      value={updateCompany.website}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -296,7 +291,7 @@ export default function CompanyRegister() {
                 <CardContent className="space-y-4">
                   <ReactQuill
                     theme="snow"
-                    value={company.description}
+                    value={updateCompany.description}
                     onChange={handleDescriptionChange}
                     className="h-[400px] mb-12"
                     modules={{
@@ -315,7 +310,7 @@ export default function CompanyRegister() {
                       id="preview"
                       className="p-4 border rounded-md bg-gray-50"
                       dangerouslySetInnerHTML={{
-                        __html: company.description || "",
+                        __html: updateCompany.description || "",
                       }}
                     />
                   </div>
@@ -329,12 +324,13 @@ export default function CompanyRegister() {
               {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
+              <Save />
               Lưu thông tin
             </Button>
           </div>
         </form>
       </div>
       <ToastContainer />
-    </div>
+    </>
   );
 }

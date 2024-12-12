@@ -5,9 +5,13 @@ export interface Company {
     description: string;
     website: string;
     thumbnail: string;
-    amountOfEmployees: number;
-    taxNumber: string;
+    amount_of_employee: number;
+    tax_number: string;
     status: string;
+    address: string;
+    phone: string;
+    email: string;
+    contract: File | string;
     created_at: string;
     updated_at: string;
 }

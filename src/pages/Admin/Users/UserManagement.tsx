@@ -211,6 +211,7 @@ export default function UserManagement() {
               <TableHead>Email</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Roles</TableHead>
+              <TableHead>Company</TableHead>
               <TableHead>Created at</TableHead>
               <TableHead>Updated at</TableHead>
               <TableHead className="text-right">Action</TableHead>
@@ -240,6 +241,7 @@ export default function UserManagement() {
                   <TableCell>
                     {user.roles?.map((role) => role.name).join(", ")}
                   </TableCell>
+                  <TableCell>{user.company?.name}</TableCell>
                   <TableCell>
                     {format(new Date(user.created_at), "dd/MM/yyyy HH:mm")}
                   </TableCell>

@@ -33,6 +33,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { showToast, ToastContainer } from "@/utils/toastConfig";
+import { useNavigate } from "react-router-dom";
 
 export default function CreatePost() {
   const [formOfWorks, setFormOfWorks] = useState<FormOfWork[]>([]);
@@ -48,6 +49,8 @@ export default function CreatePost() {
   const [selectedPositions, setSelectedPositions] = useState<Position[]>([]);
   const [dueDate, setDueDate] = useState<Date>();
   const user = useSelector((state: RootState) => state.user.user);
+
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -153,9 +156,9 @@ export default function CreatePost() {
 
       const response = await api.post("/posts", postData);
 
-      if (response.status === 201) {
-        showToast("Post created succefully!", "success");
-      }
+      showToast("Post created succefully!", "success");
+
+      navigate(-1);
     } catch (error) {
       console.error("Error creating post:", error);
     }
@@ -532,7 +535,11 @@ export default function CreatePost() {
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
-            <Button type="button" variant="outline">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(-1)}
+            >
               Cancel
             </Button>
             <Button

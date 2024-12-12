@@ -37,119 +37,109 @@ import {
 
 import { Label } from "@/components/ui/label";
 import {
-  ChevronUp,
-  ChevronDown,
   Edit,
   Trash,
   Plus,
   Search,
   ChevronRight,
   ChevronLeft,
+  Eye,
   Loader2,
 } from "lucide-react";
 import api from "@/utils/api";
 import { format } from "date-fns";
 import { PaginationInfo } from "@/models/PaginationInfo.interface";
-import { Role } from "@/models/role.interface";
-import { Textarea } from "@/components/ui/textarea";
+import { Post } from "@/models/post.interface";
 import { showToast, ToastContainer } from "@/utils/toastConfig";
+import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
-export default function RoleManagement() {
-  const [roles, setRoles] = useState<Role[]>([]);
+export default function AdminPostManagement() {
+  const [posts, setPosts] = useState<Post[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-  const [sortField, setSortField] = useState<keyof Role>("name");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<Role | null>(null);
-  const [newRole, setNewRole] = useState({ name: "", description: "" });
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deletingRole, setDeletingRole] = useState<Role | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [deletingPost, setDeletingPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
-    getRoles();
+    getUserCompanyPost();
   }, []);
 
-  const getRoles = async (page = 1, size = 5, search = "") => {
+  const getUserCompanyPost = async (
+    page = 1,
+    size = 5,
+    search = "",
+    area_id = ""
+  ) => {
     try {
-      setLoading(true);
-      const response = await api.get(`roles?q=${search}&p=${page}&s=${size}`);
-      setRoles(response.data.data);
+      const response = await api.get(
+        `posts?q=${search}&p=${page}&s=${size}&area_id=${area_id}`
+      );
+      setPosts(response.data.data);
       setPagination(response.data.pagination);
+
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching tags:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleSort = (field: keyof Role) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-    // You might want to call an API endpoint here to sort on the server-side
-  };
-
-  const handleAddRole = async () => {
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
     try {
-      const response = await api.post("roles", newRole);
-      setRoles([...roles, response.data.data]);
-      setIsAddDialogOpen(false);
-      setNewRole({ name: "", description: "" });
-      getRoles(pagination?.current_page, pagination?.size);
-
-      showToast("Role added successfully", "success");
-    } catch (error) {
-      console.error("Error adding tag:", error);
-    }
-  };
-
-  const handleUpdateRole = async () => {
-    if (!editingRole) return;
-    try {
-      const response = await api.put(`roles/${editingRole.id}`, editingRole);
-      setRoles(
-        roles.map((role) =>
-          role.id === editingRole.id ? response.data.data : role
+      const response = await api.put(`posts/${editingPost.id}`, editingPost);
+      setPosts(
+        posts.map((tag) =>
+          tag.id === editingPost.id ? response.data.data : tag
         )
       );
       setIsEditDialogOpen(false);
-      setEditingRole(null);
-      getRoles(pagination?.current_page, pagination?.size);
-
-      showToast("Role updated successfully", "success");
+      setEditingPost(null);
+      getUserCompanyPost(pagination?.current_page, pagination?.size);
     } catch (error) {
       console.error("Error updating tag:", error);
     }
   };
 
-  const handleDeleteRole = async (id: number) => {
+  const handleDeletePost = async (id: number) => {
     try {
-      await api.delete(`roles/${id}`).then(() => {
-        setRoles(roles.filter((role) => role.id !== id));
-        setIsDeleteDialogOpen(false);
-        getRoles(pagination?.current_page, pagination?.size);
-      });
+      await api.delete(`posts/${id}`);
+      setPosts(posts.filter((tag) => tag.id !== id));
+      setIsDeleteDialogOpen(false);
+      getUserCompanyPost(pagination?.current_page, pagination?.size);
+
+      showToast("Posts deleted successfully", "success");
     } catch (error) {
       console.error("Error deleting tag:", error);
     }
   };
 
   const handleSearch = () => {
-    getRoles(1, pagination?.size, searchTerm);
+    getUserCompanyPost(1, pagination?.size, searchTerm);
   };
 
   const handlePageChange = (page: number) => {
-    getRoles(page, pagination?.size);
+    getUserCompanyPost(page, pagination?.size);
   };
 
   const handlePageSizeChange = (size: number) => {
-    getRoles(1, size);
+    getUserCompanyPost(1, size);
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "published":
+        return "active";
+      case "draft":
+        return "outline";
+      default:
+        return "outline";
+    }
   };
 
   if (loading) {
@@ -162,7 +152,7 @@ export default function RoleManagement() {
     );
   }
 
-  if (!roles) {
+  if (!posts) {
     return (
       <AdminLayout>
         <div className="text-center">
@@ -175,12 +165,12 @@ export default function RoleManagement() {
   return (
     <AdminLayout>
       <div className="space-y-6 bg-white p-4 rounded">
-        <h1 className="text-2xl font-bold">Role Management</h1>
+        <h1 className="text-2xl font-bold">Post Management</h1>
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Input
-              placeholder="Search by name"
+              placeholder="Search by title, description"
               className="max-w-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -192,98 +182,65 @@ export default function RoleManagement() {
               <Search />
             </Button>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus /> Add new
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add new tag</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Name
-                  </Label>
-                  <Input
-                    id="name"
-                    value={newRole.name}
-                    onChange={(e) =>
-                      setNewRole({ ...newRole, name: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    value={newRole.description}
-                    onChange={(e) =>
-                      setNewRole({ ...newRole, description: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-              </div>
-              <Button onClick={handleAddRole}>Add</Button>
-            </DialogContent>
-          </Dialog>
         </div>
 
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>No.</TableHead>
-              <TableHead
-                className="cursor-pointer"
-                onClick={() => handleSort("name")}
-              >
-                Role name{" "}
-                {sortField === "name" &&
-                  (sortDirection === "asc" ? (
-                    <ChevronUp className="inline" />
-                  ) : (
-                    <ChevronDown className="inline" />
-                  ))}
-              </TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Created at</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Work type</TableHead>
+              <TableHead>Area</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Post date</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {roles.length > 0 ? (
-              roles.map((role, index) => (
-                <TableRow key={role.id}>
+            {posts.length > 0 ? (
+              posts.map((post, index) => (
+                <TableRow key={post.id}>
                   <TableCell>
                     {pagination ? pagination.from + index : index + 1}
                   </TableCell>
-                  <TableCell>{role.name}</TableCell>
-                  <TableCell>{role.description}</TableCell>
                   <TableCell>
-                    {format(role.created_at, "dd/MM/yyyy HH:mm")}
+                    {post.company.name.length > 10
+                      ? `${post.title.slice(0, 10)}...`
+                      : post.title}
+                  </TableCell>
+                  <TableCell>
+                    {post.title.length > 20
+                      ? `${post.title.slice(0, 20)}...`
+                      : post.title}
+                  </TableCell>
+
+                  <TableCell>{post.form_of_work.name}</TableCell>
+                  <TableCell>{post.area.name}</TableCell>
+                  <TableCell>{post.category.name}</TableCell>
+                  <TableCell>{post.amount}</TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusVariant(post.status)}>
+                      {post.status.toUpperCase()}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {format(post.created_at, "dd/MM/yyyy HH:mm")}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
-                      variant="outline"
-                      className="mr-2"
-                      onClick={() => {
-                        setEditingRole(role);
-                        setIsEditDialogOpen(true);
-                      }}
+                      className="mr-2 bg-blue-600 hover:bg-blue-700"
+                      onClick={() => navigate(`/admin/posts/${post.id}`)}
                     >
-                      <Edit />
+                      <Eye />
                     </Button>
                     <Button
                       variant="default"
                       onClick={() => {
                         setIsDeleteDialogOpen(true);
-                        setDeletingRole(role);
+                        setDeletingPost(post);
                       }}
                     >
                       <Trash />
@@ -303,7 +260,7 @@ export default function RoleManagement() {
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span>Show</span>
+            <span>Hiển thị</span>
             <Select
               value={pagination?.size.toString()}
               onValueChange={(value) => handlePageSizeChange(Number(value))}
@@ -318,7 +275,7 @@ export default function RoleManagement() {
                 <SelectItem value="50">50</SelectItem>
               </SelectContent>
             </Select>
-            <span>items per page</span>
+            <span>trên trang</span>
           </div>
           <div className="flex justify-center gap-2">
             <Button
@@ -372,41 +329,26 @@ export default function RoleManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{`Role update with id ${editingRole?.id}`}</DialogTitle>
+            <DialogTitle>{`Cập nhật tag ${editingPost?.id}`}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-name" className="text-right">
-                Role name
+                Tên
               </Label>
               <Input
                 id="edit-name"
-                value={editingRole?.name || ""}
+                value={editingPost?.title || ""}
                 onChange={(e) =>
-                  setEditingRole((prev) =>
+                  setEditingPost((prev) =>
                     prev ? { ...prev, name: e.target.value } : null
                   )
                 }
                 className="col-span-3"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="edit-description"
-                value={editingRole?.description || ""}
-                onChange={(e) =>
-                  setEditingRole((prev) =>
-                    prev ? { ...prev, description: e.target.value } : null
-                  )
-                }
-                className="col-span-3"
-              />
-            </div>
           </div>
-          <Button onClick={handleUpdateRole}>Cập nhật</Button>
+          <Button onClick={handleUpdatePost}>Cập nhật</Button>
         </DialogContent>
       </Dialog>
 
@@ -417,7 +359,7 @@ export default function RoleManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{`Delete ${
-              deletingRole?.name ?? ""
+              deletingPost?.title ?? ""
             }`}</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete this tag?
@@ -426,7 +368,7 @@ export default function RoleManagement() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deletingRole && handleDeleteRole(deletingRole.id)}
+              onClick={() => deletingPost && handleDeletePost(deletingPost.id)}
             >
               Delete
             </AlertDialogAction>

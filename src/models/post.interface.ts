@@ -26,5 +26,5 @@ export interface Post {
     users?: User[];
     levels?: Level[];
     tags?: Tag[];
-    posision?: Position[];
+    positions?: Position[];
 }
